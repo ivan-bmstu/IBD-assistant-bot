@@ -2,6 +2,12 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Avoid .pyc files and ensure logs are flushed
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    POETRY_VIRTUALENVS_CREATE=false \
+    POETRY_NO_INTERACTION=1
+
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
@@ -14,8 +20,7 @@ COPY pyproject.toml poetry.lock* ./
 
 # Install Poetry and Python dependencies
 RUN pip install --no-cache-dir poetry && \
-    poetry config virtualenvs.create false && \
-    poetry install --no-dev --no-root --no-interaction --no-ansi
+    poetry install --only main --no-root --no-ansi
 
 # Copy application code
 COPY . .
