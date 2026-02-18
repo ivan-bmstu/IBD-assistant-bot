@@ -25,6 +25,8 @@ class DestinyMiddleware(BaseMiddleware):
         elif callback_query:
             if callback_query.data.startswith(BowelMovementCallbackKey.STOOL_CONSISTENCY):
                 destiny = BOWEL_MOVEMENT
+            elif callback_query.data.startswith(BowelMovementCallbackKey.STOOL_BLOOD):
+                destiny = BOWEL_MOVEMENT
             elif callback_query.data in (
                     BowelMovementCallbackKey.SKIP_NOTES.value,
                     BowelMovementCallbackKey.BACK_FROM_NOTES.value,

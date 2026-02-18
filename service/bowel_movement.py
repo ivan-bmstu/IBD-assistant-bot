@@ -35,13 +35,15 @@ class BowelMovementService:
             session: AsyncSession,
             bowel_movement_id: int,
             notes: Optional[str] = None,
-            stool_consistency: Optional[int] = None
+            stool_consistency: Optional[int] = None,
+            blood_lvl: Optional[int] = None,
     ) -> Optional[BowelMovement]:
         return await BowelMovementRepository.update_bowel_movement(
             session=session,
             movement_id=bowel_movement_id,
             notes=notes,
-            stool_consistency=stool_consistency
+            stool_consistency=stool_consistency,
+            blood_lvl=blood_lvl,
         )
 
 
@@ -64,3 +66,11 @@ class BowelMovementService:
         else:
             stool_consistency_val = int(stool_consistency_str)
         return stool_consistency_val
+
+    @staticmethod
+    def get_stool_blood_data(callback_data: str) -> int | None:
+        """Parse stool blood callback data"""
+        val: str = callback_data.split(':')[1]
+        if val == BowelMovementCallbackKey.SKIP:
+            return None
+        return int(val)

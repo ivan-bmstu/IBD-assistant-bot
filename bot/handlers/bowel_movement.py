@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.handlers.constants import BowelMovementMessageCommand, BowelMovementCallbackKey
 from bot.keyboards.bowel_movement import get_bowel_movement_keyboard, get_skip_notes_keyboard, get_result_msg_text, \
-    get_bowel_movement_text
+    get_bowel_movement_text, get_blood_msg_text, get_blood_msg_keyboard
 from database.models import User
 from database.models.bowel_movement import BowelMovement
 from service.bowel_movement import BowelMovementService
@@ -19,6 +19,7 @@ router = Router()
 class BowelMovementStates(StatesGroup):
     """FSM states for bowel movement recording"""
     stool_consistency = State()
+    blood = State()
     waiting_for_notes = State()
 
 
@@ -89,10 +90,28 @@ async def add_stool_consistency(callback: CallbackQuery, state: FSMContext, sess
             stool_consistency=stool_consistency_val,
         )
     await callback.message.edit_text(
+        text=get_blood_msg_text(),
+        reply_markup=get_blood_msg_keyboard(),
+    )
+    await state.set_state(BowelMovementStates.blood)
+
+
+@router.callback_query(F.data.startswith(BowelMovementCallbackKey.STOOL_BLOOD))
+async def add_stool_blood(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+    blood_lvl: int | None = BowelMovementService.get_stool_blood_data(callback.data)
+    if blood_lvl is not None:
+        state_data: BowelMovementStateData = await state.get_data()
+        bowel_movement_id = state_data['bowel_movement_id']
+        await BowelMovementService.update_bowel_movement(
+            session=session,
+            bowel_movement_id=bowel_movement_id,
+            blood_lvl=blood_lvl,
+        )
+    await callback.message.edit_text(
         text="Если хотите оставить заметку, пришлите ее в сообщении\nИли пропустите этот шаг",
         reply_markup=get_skip_notes_keyboard()
     )
-    await state.set_state(BowelMovementStates.waiting_for_notes)
+    await state.set_state(BowelMovementStates.blood)
 
 
 @router.callback_query(F.data == BowelMovementCallbackKey.SKIP_NOTES.value)

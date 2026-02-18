@@ -10,6 +10,7 @@ services:
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
+    command: ["/bin/sh", "-c", "alembic upgrade head && python -m bot.main"]
     depends_on:
       postgres:
         condition: service_healthy

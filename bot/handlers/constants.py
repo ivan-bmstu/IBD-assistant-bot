@@ -11,6 +11,7 @@ class BowelMovementCallbackKey(StrEnum):
     SKIP = 'skip'
     SKIP_NOTES = 'skip_notes'
     STOOL_CONSISTENCY = 'stool_consistency'
+    STOOL_BLOOD = 'stool_blood'
     BACK_FROM_NOTES = 'back_from_notes'
 
 

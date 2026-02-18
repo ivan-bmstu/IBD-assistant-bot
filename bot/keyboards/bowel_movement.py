@@ -4,7 +4,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot.handlers.constants import BowelMovementCallbackKey
 from database.models import BowelMovement
-from database.models.bowel_movement import StoolConsistency
+from database.models.bowel_movement import StoolConsistency, StoolBlood
 
 
 def get_bowel_movement_text() -> str:
@@ -26,7 +26,7 @@ def get_bowel_movement_keyboard() -> InlineKeyboardMarkup:
     # Создаем кнопки выбора консистенции (по 2 кнопки в строке)
     for i in range(0, len(consistency_options), 2):
         row: list[InlineKeyboardButton] = []
-        for consistency_value, button_text in consistency_options[i:i+2]:
+        for consistency_value, button_text in consistency_options[i:i + 2]:
             row.append(
                 InlineKeyboardButton(
                     text=button_text,
@@ -44,6 +44,47 @@ def get_bowel_movement_keyboard() -> InlineKeyboardMarkup:
     ])
 
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def get_blood_msg_text() -> str:
+    return "Укажите количество крови в стуле"
+
+
+def get_blood_msg_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=f"{StoolBlood.TRACE.label}",
+                    callback_data=f"{BowelMovementCallbackKey.STOOL_BLOOD}:{StoolBlood.TRACE.value}",
+                ),
+                InlineKeyboardButton(
+                    text=f"{StoolBlood.MILD.label}",
+                    callback_data=f"{BowelMovementCallbackKey.STOOL_BLOOD}:{StoolBlood.MILD.value}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text=f"{StoolBlood.MODERATE.label}",
+                    callback_data=f"{BowelMovementCallbackKey.STOOL_BLOOD}:{StoolBlood.MODERATE.value}",
+                ),
+                InlineKeyboardButton(
+                    text=f"{StoolBlood.SEVERE.label}",
+                    callback_data=f"{BowelMovementCallbackKey.STOOL_BLOOD}:{StoolBlood.SEVERE.value}",
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Пропустить",
+                    callback_data=f"{BowelMovementCallbackKey.STOOL_BLOOD}:{BowelMovementCallbackKey.SKIP}",
+                ),
+                InlineKeyboardButton(
+                    text=f"{StoolBlood.NOT_PRESENT.label}",
+                    callback_data=f"{BowelMovementCallbackKey.STOOL_BLOOD}:{StoolBlood.NOT_PRESENT.value}",
+                ),
+            ],
+        ]
+    )
 
 
 def get_skip_notes_keyboard():
@@ -67,17 +108,20 @@ def get_result_msg_text(bowel_movement: BowelMovement, timezone_offset: int | No
         if bowel_movement.stool_consistency is not None
         else None
     )
+    blood_lvl = (StoolBlood(bowel_movement.blood_lvl) if bowel_movement.blood_lvl is not None else None)
 
     offset_minutes = timezone_offset or 0
     local_dt = bowel_movement.created_at + timedelta(minutes=offset_minutes)
 
     notes = f"Примечания: {bowel_movement.notes}" if bowel_movement.notes else ""
     consistency_text = stool_consistency.label if stool_consistency else "—"
+    blood_lvl_text = blood_lvl.label if blood_lvl is not None else "—"
 
     return (
         "📝 <b>Запись произведена успешно</b>\n\n"
         f"Дата: {local_dt.strftime('%d.%m.%Y')}\n"
         f"Время: {local_dt.strftime('%H:%M')}\n"
         f"Состояние стула: {consistency_text}\n"
+        f"Кровь в стуле: {blood_lvl_text}\n\n"
         f"{notes}"
     )
