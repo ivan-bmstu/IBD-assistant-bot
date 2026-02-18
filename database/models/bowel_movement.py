@@ -23,6 +23,7 @@ class BowelMovement(Base):
     notes = Column(Text, nullable=True)
     stool_consistency = Column(Integer, nullable=True)
     blood_lvl = Column(Integer, nullable=True)
+    mucus = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
@@ -63,5 +64,17 @@ class StoolBlood(IntEnum):
             StoolBlood.MILD:            "Умеренно 🩸🩸",
             StoolBlood.MODERATE:        "Выражено 🩸🩸🩸",
             StoolBlood.SEVERE:          "Резко выражено 🩸🩸🩸🩸",
+        }[self]
+
+
+class Mucus(IntEnum):
+    NOT_PRESENT = 0
+    PRESENT = 1
+
+    @property
+    def label(self) -> str:
+        return {
+            Mucus.NOT_PRESENT:  "Отсутствует",
+            Mucus.PRESENT:      "Присутствует 🟢",
         }[self]
 

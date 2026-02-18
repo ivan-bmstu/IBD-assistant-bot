@@ -4,7 +4,7 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 from bot.handlers.constants import BowelMovementCallbackKey
 from database.models import BowelMovement
-from database.models.bowel_movement import StoolConsistency, StoolBlood
+from database.models.bowel_movement import StoolConsistency, StoolBlood, Mucus
 
 
 def get_bowel_movement_text() -> str:
@@ -40,10 +40,46 @@ def get_bowel_movement_keyboard() -> InlineKeyboardMarkup:
         InlineKeyboardButton(
             text='Пропустить',
             callback_data=f'{BowelMovementCallbackKey.STOOL_CONSISTENCY}:{BowelMovementCallbackKey.SKIP}'
-        )
+        ),
     ])
 
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def get_mucus_msg_text() -> str:
+    return "Укажите, присутствует ли слизь в стуле"
+
+
+def get_mucus_msg_keyboard() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=Mucus.PRESENT.label,
+                    callback_data=f'{BowelMovementCallbackKey.STOOL_MUCUS}:{Mucus.PRESENT.value}'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=Mucus.NOT_PRESENT.label,
+                    callback_data=f'{BowelMovementCallbackKey.STOOL_MUCUS}:{Mucus.NOT_PRESENT.value}'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Пропустить",
+                    callback_data=f'{BowelMovementCallbackKey.STOOL_MUCUS}:{BowelMovementCallbackKey.SKIP}'
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Вернуться назад ⬅️",
+                    callback_data=f'{BowelMovementCallbackKey.BACK_FROM_MUCUS}'
+                )
+            ],
+        ]
+    )
+
 
 
 def get_blood_msg_text() -> str:
@@ -83,6 +119,12 @@ def get_blood_msg_keyboard() -> InlineKeyboardMarkup:
                     callback_data=f"{BowelMovementCallbackKey.STOOL_BLOOD}:{StoolBlood.NOT_PRESENT.value}",
                 ),
             ],
+            [
+                InlineKeyboardButton(
+                    text="Вернуться назад ⬅️",
+                    callback_data=f"{BowelMovementCallbackKey.BACK_FROM_BLOOD}",
+                ),
+            ]
         ]
     )
 
@@ -109,6 +151,7 @@ def get_result_msg_text(bowel_movement: BowelMovement, timezone_offset: int | No
         else None
     )
     blood_lvl = (StoolBlood(bowel_movement.blood_lvl) if bowel_movement.blood_lvl is not None else None)
+    mucus_lvl = Mucus(bowel_movement.mucus) if bowel_movement.mucus is not None else None
 
     offset_minutes = timezone_offset or 0
     local_dt = bowel_movement.created_at + timedelta(minutes=offset_minutes)
@@ -116,12 +159,14 @@ def get_result_msg_text(bowel_movement: BowelMovement, timezone_offset: int | No
     notes = f"Примечания: {bowel_movement.notes}" if bowel_movement.notes else ""
     consistency_text = stool_consistency.label if stool_consistency else "—"
     blood_lvl_text = blood_lvl.label if blood_lvl is not None else "—"
+    mucus_lvl_text = mucus_lvl.label if mucus_lvl is not None else "—"
 
     return (
         "📝 <b>Запись произведена успешно</b>\n\n"
         f"Дата: {local_dt.strftime('%d.%m.%Y')}\n"
         f"Время: {local_dt.strftime('%H:%M')}\n"
         f"Состояние стула: {consistency_text}\n"
+        f"Слизь в стуле: {mucus_lvl_text}\n"
         f"Кровь в стуле: {blood_lvl_text}\n\n"
         f"{notes}"
     )

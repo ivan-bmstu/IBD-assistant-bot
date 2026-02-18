@@ -1,8 +1,8 @@
 from aiogram import BaseMiddleware
 from aiogram.fsm.storage.base import StorageKey
 
-from bot.handlers.constants import BowelMovementMessageCommand, BowelMovementCallbackKey, MainCallbackKey
 from bot.handlers.bowel_movement import BowelMovementStates
+from bot.handlers.constants import BowelMovementMessageCommand, BowelMovementCallbackKey, MainCallbackKey
 
 BOWEL_MOVEMENT = "bowel_movement"
 TIMEZONE = "timezone"
@@ -23,13 +23,20 @@ class DestinyMiddleware(BaseMiddleware):
 
 
         elif callback_query:
-            if callback_query.data.startswith(BowelMovementCallbackKey.STOOL_CONSISTENCY):
-                destiny = BOWEL_MOVEMENT
-            elif callback_query.data.startswith(BowelMovementCallbackKey.STOOL_BLOOD):
+            if any(
+                    callback_query.data.startswith(prefix)
+                    for prefix in (
+                            BowelMovementCallbackKey.STOOL_CONSISTENCY,
+                            BowelMovementCallbackKey.STOOL_BLOOD,
+                            BowelMovementCallbackKey.STOOL_MUCUS,
+                    )
+            ):
                 destiny = BOWEL_MOVEMENT
             elif callback_query.data in (
                     BowelMovementCallbackKey.SKIP_NOTES.value,
                     BowelMovementCallbackKey.BACK_FROM_NOTES.value,
+                    BowelMovementCallbackKey.BACK_FROM_MUCUS.value,
+                    BowelMovementCallbackKey.BACK_FROM_BLOOD.value,
             ):
                 destiny = BOWEL_MOVEMENT
             elif callback_query.data.startswith(MainCallbackKey.SET_HOUR_TIMEZONE):

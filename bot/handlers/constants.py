@@ -12,7 +12,10 @@ class BowelMovementCallbackKey(StrEnum):
     SKIP_NOTES = 'skip_notes'
     STOOL_CONSISTENCY = 'stool_consistency'
     STOOL_BLOOD = 'stool_blood'
+    STOOL_MUCUS = 'stool_mucus'
     BACK_FROM_NOTES = 'back_from_notes'
+    BACK_FROM_MUCUS = 'back_from_mucus'
+    BACK_FROM_BLOOD = 'back_from_blood'
 
 
 class MainMessageCommand(StrEnum):
