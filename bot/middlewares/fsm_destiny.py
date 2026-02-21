@@ -22,7 +22,7 @@ class DestinyMiddleware(BaseMiddleware):
                 destiny = BOWEL_MOVEMENT
 
 
-        elif callback_query:
+        elif callback_query and callback_query.data:
             if any(
                     callback_query.data.startswith(prefix)
                     for prefix in (

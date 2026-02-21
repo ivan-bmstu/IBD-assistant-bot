@@ -18,4 +18,12 @@ class DatabaseMiddleware(BaseMiddleware):
         # Get database session
         async for session in get_db():
             data["session"] = session
-            return await handler(event, data)
+            try:
+                result = await handler(event, data)
+                await session.commit()
+                return result
+            except Exception:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()

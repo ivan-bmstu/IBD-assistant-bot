@@ -8,6 +8,7 @@ from aiogram.fsm.storage.memory import SimpleEventIsolation
 
 from bot.handlers import main_handler, bowel_movement
 from bot.middlewares import DatabaseMiddleware
+from bot.middlewares.error_handler import ErrorHandlerMiddleware
 from bot.middlewares.fsm_destiny import DestinyMiddleware
 from bot.middlewares.patched_fsm import PatchedFSMContextMiddleware
 from config.settings import settings
@@ -39,6 +40,7 @@ async def main():
     )
 
     # Register middlewares
+    dp.update.outer_middleware(ErrorHandlerMiddleware())
     dp.update.outer_middleware(DestinyMiddleware(storage))
     dp.update.outer_middleware(PatchedFSMContextMiddleware(storage, events_isolation=SimpleEventIsolation()))
     dp.update.middleware(DatabaseMiddleware())

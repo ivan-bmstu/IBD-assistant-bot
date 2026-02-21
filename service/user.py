@@ -39,15 +39,19 @@ class UserService:
        return user_opt
 
     @staticmethod
-    async def set_user_hour_timezone(session: AsyncSession, telegram_id: int, timezone_offset: int):
+    async def set_user_hour_timezone(session: AsyncSession, telegram_id: int, timezone_offset: int) -> User | None:
         user = await UserService.get_user_by_telegram_id(session, telegram_id)
+        if user is None:
+            return None
         timezone_offset = timezone_offset * 60
         user.timezone_offset = timezone_offset
         return await UserRepository.update_user(session, user)
 
     @staticmethod
-    async def set_user_minute_timezone(session: AsyncSession, telegram_id: int, timezone_minutes: int) -> User:
+    async def set_user_minute_timezone(session: AsyncSession, telegram_id: int, timezone_minutes: int) -> User | None:
         user = await UserService.get_user_by_telegram_id(session, telegram_id)
+        if user is None:
+            return None
         timezone_hours: int = user.timezone_offset
         offset = timezone_hours + (timezone_minutes if timezone_hours >= 0 else -timezone_minutes)
         if timezone_hours != offset:

@@ -122,7 +122,7 @@ async def cmd_help(message: Message):
 
 
 @router.message(F.text == MainMessageCommand.HELP.value)
-async def msg_about(message: Message):
+async def msg_help(message: Message):
     await cmd_help(message)
 
 

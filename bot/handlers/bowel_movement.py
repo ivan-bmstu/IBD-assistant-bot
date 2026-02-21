@@ -34,11 +34,8 @@ class BowelMovementStateData(BaseModel):
 async def start_bowel_movement_recording(message: Message, state: FSMContext, session: AsyncSession):
     """Start the bowel movement recording process"""
     current_state = await state.get_state()
-    # Список всех состояний BowelMovementStates
-    bowel_movement_states = [
-        BowelMovementStates.stool_consistency.state,
-        BowelMovementStates.waiting_for_notes.state
-    ]
+    # Get all states from the BowelMovementStates group
+    bowel_movement_states = [s.state for s in BowelMovementStates.__states__]
     if current_state in bowel_movement_states:
         await message.answer(text="Пожалуйста, завершите предыдущую запись")
         return
@@ -99,7 +96,7 @@ async def back_from_mucus_to_stool_consistency(callback: CallbackQuery, state: F
         text=get_bowel_movement_text(),
         reply_markup=get_bowel_movement_keyboard(),
     )
-    await state.set_state(BowelMovementStates.mucus)
+    await state.set_state(BowelMovementStates.stool_consistency)
 
 @router.callback_query(F.data.startswith(BowelMovementCallbackKey.STOOL_BLOOD))
 async def add_stool_blood(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
