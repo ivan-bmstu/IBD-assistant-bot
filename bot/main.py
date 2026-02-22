@@ -13,7 +13,11 @@ from bot.middlewares.fsm_destiny import DestinyMiddleware
 from bot.middlewares.patched_fsm import PatchedFSMContextMiddleware
 from config.settings import settings
 from database.fsm_storage import PostgresStorage
+from database.repository.bowel_movements import BowelMovementRepository
+from database.repository.user import UserRepository
 from database.session import engine
+from service.bowel_movement import BowelMovementService
+from service.user import UserService
 
 # Configure logging
 logging.basicConfig(
@@ -27,16 +31,26 @@ async def main():
     """Main function to start the bot"""
     logger.info("Starting Poop Tracker Bot...")
 
-    # Initialize bot and dispatcher
+    # Initialize bot
     bot = Bot(
         token=settings.BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML)
     )
     storage = PostgresStorage(engine=engine)
+
+    # Create repository and service instances
+    user_repo = UserRepository()
+    bowel_movement_repo = BowelMovementRepository()
+    user_service = UserService(user_repository=user_repo)
+    bowel_movement_service = BowelMovementService(bowel_movement_repository=bowel_movement_repo)
+
     dp = Dispatcher(
         storage=storage,
         events_isolation=SimpleEventIsolation(),
-        disable_fsm=True
+        disable_fsm=True,
+        # Pass services to all handlers
+        user_service=user_service,
+        bowel_movement_service=bowel_movement_service
     )
 
     # Register middlewares

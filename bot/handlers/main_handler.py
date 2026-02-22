@@ -10,7 +10,7 @@ from bot.keyboards.main_keyboard import get_main_keyboard, get_timezone_hour_key
     get_settings_keyboard
 from database.models import User
 from service.user import UserService
-from service.utills import format_timezone
+from service.utils import format_timezone
 
 router = Router()
 
@@ -22,10 +22,10 @@ class StartStates(StatesGroup):
 
 
 @router.message(CommandStart())
-async def cmd_start(message: Message, session: AsyncSession, state: FSMContext):
+async def cmd_start(message: Message, session: AsyncSession, state: FSMContext, user_service: UserService):
     """Handle /start command"""
     # Get or create user
-    user = await UserService.get_or_create_user(
+    user = await user_service.get_or_create_user(
         session=session,
         telegram_id=message.from_user.id,
         language_code=message.from_user.language_code,
@@ -50,14 +50,14 @@ async def cmd_start(message: Message, session: AsyncSession, state: FSMContext):
 
 
 @router.callback_query(F.data.startswith(MainCallbackKey.SET_HOUR_TIMEZONE))
-async def set_hour_timezone(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def set_hour_timezone(callback: CallbackQuery, state: FSMContext, session: AsyncSession, user_service: UserService):
     """Set user hour timezone"""
     data_val: str = callback.data.split(':')[1]
     if data_val == MainCallbackKey.SKIP:
         timezone_offset = 0
     else:
         timezone_offset: int = int(data_val)
-    await UserService.set_user_hour_timezone(session, callback.from_user.id, timezone_offset)
+    await user_service.set_user_hour_timezone(session, callback.from_user.id, timezone_offset)
     await callback.message.edit_text(
         text="Укажите минуты таймзоны",
         reply_markup=get_timezone_minutes_keyboard()
@@ -66,14 +66,15 @@ async def set_hour_timezone(callback: CallbackQuery, state: FSMContext, session:
 
 
 @router.callback_query(F.data.startswith(MainCallbackKey.SET_MINUTE_TIMEZONE))
-async def set_minute_timezone(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def set_minute_timezone(callback: CallbackQuery, state: FSMContext, session: AsyncSession,
+                            user_service: UserService):
     """Set user minute timezone"""
     data_val: str = callback.data.split(':')[1]
     if data_val == MainCallbackKey.SKIP.value:
         timezone_offset = 0
     else:
         timezone_offset: int = int(data_val)
-    user: User = await UserService.set_user_minute_timezone(session, callback.from_user.id, timezone_offset)
+    user: User = await user_service.set_user_minute_timezone(session, callback.from_user.id, timezone_offset)
     timezone: str = format_timezone(user.timezone_offset)
     await callback.message.edit_text(
         text=f"Таймзона успешно установлена\n\nВаша текущая таймзона: {timezone}"
@@ -85,9 +86,9 @@ async def set_minute_timezone(callback: CallbackQuery, state: FSMContext, sessio
 
 
 @router.message(F.text == MainMessageCommand.USER_SETTINGS)
-async def user_settings(message: Message, state: FSMContext, session: AsyncSession):
+async def user_settings(message: Message, state: FSMContext, session: AsyncSession, user_service: UserService):
     """Show user settings"""
-    user: User = await UserService.get_or_create_user(session, message.from_user.id)
+    user: User = await user_service.get_or_create_user(session, message.from_user.id)
     timezone: str = format_timezone(user.timezone_offset)
     await message.answer(
         text=f"Ваша текущая таймзона: {timezone}",

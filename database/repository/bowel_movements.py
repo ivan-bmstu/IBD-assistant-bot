@@ -9,8 +9,8 @@ from database.models.bowel_movement import BowelMovement
 
 class BowelMovementRepository:
     # Bowel Movement operations
-    @staticmethod
     async def get_bowel_movements_by_user(
+            self,
             session: AsyncSession,
             user_id: int,
             start_date: Optional[date] = None,
@@ -30,8 +30,8 @@ class BowelMovementRepository:
         result = await session.execute(query)
         return list(result.scalars().all())
 
-    @staticmethod
     async def create_bowel_movement(
+            self,
             session: AsyncSession,
             user_id: int,
             movement_date: Optional[date] = None,
@@ -53,8 +53,8 @@ class BowelMovementRepository:
         await session.refresh(bowel_movement)
         return bowel_movement
 
-    @staticmethod
     async def update_bowel_movement(
+            self,
             session: AsyncSession,
             movement_id: int,
             notes: Optional[str] = None,
@@ -83,8 +83,8 @@ class BowelMovementRepository:
         await session.refresh(bowel_movement)
         return bowel_movement
 
-    @staticmethod
     async def get_bowel_movement_by_id(
+            self,
             session: AsyncSession,
             id: int,
     ) -> BowelMovement:

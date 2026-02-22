@@ -8,16 +8,15 @@ from database.models.user import User
 
 class UserRepository:
 
-    @staticmethod
-    async def get_user_by_telegram_id(session: AsyncSession, telegram_id: int) -> Optional[User]:
+    async def get_user_by_telegram_id(self, session: AsyncSession, telegram_id: int) -> Optional[User]:
         """Get user by Telegram ID"""
         result = await session.execute(
             select(User).where(User.telegram_id == telegram_id)
         )
         return result.scalar_one_or_none()
 
-    @staticmethod
     async def create_user(
+            self,
             session: AsyncSession,
             telegram_id: int,
             language_code: str = "ru",
@@ -34,8 +33,7 @@ class UserRepository:
         await session.refresh(user)
         return user
 
-    @staticmethod
-    async def update_user(session: AsyncSession, user: User) -> User:
+    async def update_user(self, session: AsyncSession, user: User) -> User:
         session.add(user)
         await session.commit()
         return user

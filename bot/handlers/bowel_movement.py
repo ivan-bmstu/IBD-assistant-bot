@@ -31,7 +31,8 @@ class BowelMovementStateData(BaseModel):
 
 
 @router.message(F.text == BowelMovementMessageCommand.START_BOWEL_MOVEMENT)
-async def start_bowel_movement_recording(message: Message, state: FSMContext, session: AsyncSession):
+async def start_bowel_movement_recording(message: Message, state: FSMContext, session: AsyncSession,
+                                         bowel_movement_service: BowelMovementService):
     """Start the bowel movement recording process"""
     current_state = await state.get_state()
     # Get all states from the BowelMovementStates group
@@ -39,7 +40,7 @@ async def start_bowel_movement_recording(message: Message, state: FSMContext, se
     if current_state in bowel_movement_states:
         await message.answer(text="Пожалуйста, завершите предыдущую запись")
         return
-    bowel_movement: BowelMovement = await BowelMovementService.create_bowel_movement(session, message.from_user.id)
+    bowel_movement: BowelMovement = await bowel_movement_service.create_bowel_movement(session, message.from_user.id)
     sent_msg: Message = await message.answer(
         text=get_bowel_movement_text(),
         reply_markup=get_bowel_movement_keyboard()
@@ -53,13 +54,14 @@ async def start_bowel_movement_recording(message: Message, state: FSMContext, se
 
 
 @router.callback_query(F.data.startswith(BowelMovementCallbackKey.STOOL_CONSISTENCY))
-async def add_stool_consistency(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def add_stool_consistency(callback: CallbackQuery, state: FSMContext, session: AsyncSession,
+                              bowel_movement_service: BowelMovementService):
     """Add information about stool consistency to the bowel movement"""
     stool_consistency_val: int | None = BowelMovementService.parse_optional_int(callback.data)
     if stool_consistency_val is not None:
         state_data: BowelMovementStateData = await state.get_data()
         bowel_movement_id = state_data['bowel_movement_id']
-        await BowelMovementService.update_bowel_movement(
+        await bowel_movement_service.update_bowel_movement(
             session=session,
             bowel_movement_id=bowel_movement_id,
             stool_consistency=stool_consistency_val,
@@ -72,12 +74,13 @@ async def add_stool_consistency(callback: CallbackQuery, state: FSMContext, sess
 
 
 @router.callback_query(F.data.startswith(BowelMovementCallbackKey.STOOL_MUCUS))
-async def add_stool_mucus(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def add_stool_mucus(callback: CallbackQuery, state: FSMContext, session: AsyncSession,
+                        bowel_movement_service: BowelMovementService):
     mucus: int | None = BowelMovementService.parse_optional_int(callback.data)
     if mucus is not None:
         state_data: BowelMovementStateData = await state.get_data()
         bowel_movement_id = state_data['bowel_movement_id']
-        await BowelMovementService.update_bowel_movement(
+        await bowel_movement_service.update_bowel_movement(
             session=session,
             bowel_movement_id=bowel_movement_id,
             mucus=mucus,
@@ -98,14 +101,16 @@ async def back_from_mucus_to_stool_consistency(callback: CallbackQuery, state: F
     )
     await state.set_state(BowelMovementStates.stool_consistency)
 
+
 @router.callback_query(F.data.startswith(BowelMovementCallbackKey.STOOL_BLOOD))
-async def add_stool_blood(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def add_stool_blood(callback: CallbackQuery, state: FSMContext, session: AsyncSession,
+                        bowel_movement_service: BowelMovementService):
     """Add information about stool blood level to the bowel movement"""
     blood_lvl: int | None = BowelMovementService.parse_optional_int(callback.data)
     if blood_lvl is not None:
         state_data: BowelMovementStateData = await state.get_data()
         bowel_movement_id = state_data['bowel_movement_id']
-        await BowelMovementService.update_bowel_movement(
+        await bowel_movement_service.update_bowel_movement(
             session=session,
             bowel_movement_id=bowel_movement_id,
             blood_lvl=blood_lvl,
@@ -128,18 +133,19 @@ async def back_from_blood_to_mucus_state(callback: CallbackQuery, state: FSMCont
 
 
 @router.message(BowelMovementStates.waiting_for_notes)
-async def save_notes(message: Message, state: FSMContext, session: AsyncSession):
+async def save_notes(message: Message, state: FSMContext, session: AsyncSession,
+                   bowel_movement_service: BowelMovementService, user_service: UserService):
     """Save notes"""
     data = await state.get_data()
     bowel_movement_id = data["bowel_movement_id"]
     bot_msg_id = data["bowel_movement_msg_id"]
     chat_id = data["chat_id"]
-    bowel_movement: BowelMovement = await BowelMovementService.update_bowel_movement(
+    bowel_movement: BowelMovement = await bowel_movement_service.update_bowel_movement(
         session=session,
         bowel_movement_id=bowel_movement_id,
         notes=message.text
     )
-    user: User = await UserService.get_or_create_user(session, message.from_user.id)
+    user: User = await user_service.get_or_create_user(session, message.from_user.id)
     await state.clear()
     await message.bot.edit_message_text(
         text=get_result_msg_text(bowel_movement, user.timezone_offset),
@@ -151,15 +157,16 @@ async def save_notes(message: Message, state: FSMContext, session: AsyncSession)
 
 
 @router.callback_query(F.data == BowelMovementCallbackKey.SKIP_NOTES.value)
-async def skip_notes(callback: CallbackQuery, state: FSMContext, session: AsyncSession):
+async def skip_notes(callback: CallbackQuery, state: FSMContext, session: AsyncSession,
+                   bowel_movement_service: BowelMovementService, user_service: UserService):
     """User skipped notes"""
     data = await state.get_data()
     bowel_movement_id: int = data["bowel_movement_id"]
-    bowel_movement: BowelMovement = await BowelMovementService.get_bowel_movement_by_id(
+    bowel_movement: BowelMovement = await bowel_movement_service.get_bowel_movement_by_id(
         bowel_movement_id=bowel_movement_id,
         session=session,
     )
-    user: User = await UserService.get_or_create_user(session, callback.from_user.id)
+    user: User = await user_service.get_or_create_user(session, callback.from_user.id)
     await callback.message.edit_text(
         text=get_result_msg_text(bowel_movement, user.timezone_offset),
         reply_markup=None

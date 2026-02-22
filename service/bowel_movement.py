@@ -9,9 +9,11 @@ from database.repository.bowel_movements import BowelMovementRepository
 
 
 class BowelMovementService:
+    def __init__(self, bowel_movement_repository: BowelMovementRepository):
+        self.bowel_movement_repository = bowel_movement_repository
 
-    @staticmethod
     async def create_bowel_movement(
+            self,
             session: AsyncSession,
             user_id: int,
             movement_date: Optional[date] = None,
@@ -20,7 +22,7 @@ class BowelMovementService:
             stool_consistency: Optional[int] = None
     ) -> BowelMovement:
         """Create new bowel movement for user"""
-        return await BowelMovementRepository.create_bowel_movement(
+        return await self.bowel_movement_repository.create_bowel_movement(
             session=session,
             user_id=user_id,
             movement_date=movement_date,
@@ -29,9 +31,8 @@ class BowelMovementService:
             stool_consistency=stool_consistency
         )
 
-
-    @staticmethod
     async def update_bowel_movement(
+            self,
             session: AsyncSession,
             bowel_movement_id: int,
             notes: Optional[str] = None,
@@ -39,7 +40,7 @@ class BowelMovementService:
             blood_lvl: Optional[int] = None,
             mucus: Optional[int] = None
     ) -> Optional[BowelMovement]:
-        return await BowelMovementRepository.update_bowel_movement(
+        return await self.bowel_movement_repository.update_bowel_movement(
             session=session,
             movement_id=bowel_movement_id,
             notes=notes,
@@ -48,13 +49,12 @@ class BowelMovementService:
             mucus=mucus,
         )
 
-
-    @staticmethod
     async def get_bowel_movement_by_id(
+            self,
             session: AsyncSession,
             bowel_movement_id: int
     ) -> Optional[BowelMovement]:
-        return await BowelMovementRepository.get_bowel_movement_by_id(
+        return await self.bowel_movement_repository.get_bowel_movement_by_id(
             session=session,
             id=bowel_movement_id,
         )
