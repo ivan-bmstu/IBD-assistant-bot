@@ -6,12 +6,16 @@ from bot.handlers.constants import BowelMovementCallbackKey
 from database.models import BowelMovement
 from database.models.bowel_movement import StoolConsistency, StoolBlood, Mucus
 
+SKIP_BTN_TEXT = "➡️ Пропустить"
+BACK_BTN_TEXT = "⬅️ Вернуться назад"
+DELETE_BTN_TEXT = "❌🗑 Удалить запись"
+
 
 def get_bowel_movement_text() -> str:
-    return "📝 <b>Произвести запись</b>\n\nУкажите состояние стула:"
+    return "📝 <b>Запись начата</b>\n\nУкажите состояние стула:"
 
 
-def get_bowel_movement_keyboard() -> InlineKeyboardMarkup:
+def get_bowel_movement_keyboard(bowel_movement_id: int) -> InlineKeyboardMarkup:
     """Get keyboard for bowel movement input"""
     # Маппинг значений консистенции на текст кнопок
     consistency_options = [
@@ -35,15 +39,26 @@ def get_bowel_movement_keyboard() -> InlineKeyboardMarkup:
             )
         inline_keyboard.append(row)
 
+    inline_keyboard.append([
+        InlineKeyboardButton(
+            text=DELETE_BTN_TEXT,
+            callback_data=f'{BowelMovementCallbackKey.DELETE}:{bowel_movement_id}'
+        )
+    ])
+
     # Кнопка "Пропустить" отдельной строкой
     inline_keyboard.append([
         InlineKeyboardButton(
-            text='Пропустить',
+            text=SKIP_BTN_TEXT,
             callback_data=f'{BowelMovementCallbackKey.STOOL_CONSISTENCY}:{BowelMovementCallbackKey.SKIP}'
         ),
     ])
 
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def get_msg_text_delete_record() -> str:
+    return "✅ Запись успешно удалена!"
 
 
 def get_mucus_msg_text() -> str:
@@ -67,19 +82,18 @@ def get_mucus_msg_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    text="Пропустить",
+                    text=SKIP_BTN_TEXT,
                     callback_data=f'{BowelMovementCallbackKey.STOOL_MUCUS}:{BowelMovementCallbackKey.SKIP}'
                 )
             ],
             [
                 InlineKeyboardButton(
-                    text="Вернуться назад ⬅️",
+                    text=BACK_BTN_TEXT,
                     callback_data=f'{BowelMovementCallbackKey.BACK_FROM_MUCUS}'
                 )
             ],
         ]
     )
-
 
 
 def get_blood_msg_text() -> str:
@@ -111,7 +125,7 @@ def get_blood_msg_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    text="Пропустить",
+                    text=SKIP_BTN_TEXT,
                     callback_data=f"{BowelMovementCallbackKey.STOOL_BLOOD}:{BowelMovementCallbackKey.SKIP}",
                 ),
                 InlineKeyboardButton(
@@ -121,7 +135,7 @@ def get_blood_msg_keyboard() -> InlineKeyboardMarkup:
             ],
             [
                 InlineKeyboardButton(
-                    text="Вернуться назад ⬅️",
+                    text=BACK_BTN_TEXT,
                     callback_data=f"{BowelMovementCallbackKey.BACK_FROM_BLOOD}",
                 ),
             ]
@@ -135,10 +149,10 @@ def get_skip_notes_keyboard():
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="Вернуться назад ⬅️",
+                    text=BACK_BTN_TEXT,
                     callback_data=f"{BowelMovementCallbackKey.BACK_FROM_NOTES}"
                 ),
-                InlineKeyboardButton(text="Пропустить", callback_data=BowelMovementCallbackKey.SKIP_NOTES),
+                InlineKeyboardButton(text=SKIP_BTN_TEXT, callback_data=BowelMovementCallbackKey.SKIP_NOTES),
             ]
         ]
     )
@@ -169,4 +183,17 @@ def get_result_msg_text(bowel_movement: BowelMovement, timezone_offset: int | No
         f"Слизь в стуле: {mucus_lvl_text}\n"
         f"Кровь в стуле: {blood_lvl_text}\n\n"
         f"{notes}"
+    )
+
+
+def get_result_msg_inline_keyboard(bowel_movement_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text=DELETE_BTN_TEXT,
+                    callback_data=f'{BowelMovementCallbackKey.DELETE}:{bowel_movement_id}'
+                )
+            ]
+        ]
     )

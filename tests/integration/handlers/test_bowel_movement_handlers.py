@@ -92,7 +92,11 @@ class TestBowelMovementHandlers:
         """Test adding stool consistency information"""
         # Arrange
         mock_callback_query.data = f"{BowelMovementCallbackKey.STOOL_CONSISTENCY}:2"
-        mock_fsm_context.get_data.return_value = {'bowel_movement_id': 1}
+        mock_fsm_context.get_data.return_value = {
+            'bowel_movement_id': 1,
+            'bowel_movement_msg_id': 123,
+            'chat_id': 456
+        }
 
         # Act
         await add_stool_consistency(mock_callback_query, mock_fsm_context, mock_async_session,
@@ -114,7 +118,11 @@ class TestBowelMovementHandlers:
         """Test adding mucus information"""
         # Arrange
         mock_callback_query.data = f"{BowelMovementCallbackKey.STOOL_MUCUS}:1"
-        mock_fsm_context.get_data.return_value = {'bowel_movement_id': 1}
+        mock_fsm_context.get_data.return_value = {
+            'bowel_movement_id': 1,
+            'bowel_movement_msg_id': 123,
+            'chat_id': 456
+        }
 
         # Act
         await add_stool_mucus(mock_callback_query, mock_fsm_context, mock_async_session, mock_bowel_movement_service)
@@ -135,7 +143,11 @@ class TestBowelMovementHandlers:
         """Test adding blood level information"""
         # Arrange
         mock_callback_query.data = f"{BowelMovementCallbackKey.STOOL_BLOOD}:0"
-        mock_fsm_context.get_data.return_value = {'bowel_movement_id': 1}
+        mock_fsm_context.get_data.return_value = {
+            'bowel_movement_id': 1,
+            'bowel_movement_msg_id': 123,
+            'chat_id': 456
+        }
 
         # Act
         await add_stool_blood(mock_callback_query, mock_fsm_context, mock_async_session, mock_bowel_movement_service)
@@ -194,7 +206,11 @@ class TestBowelMovementHandlers:
         """Test skipping notes for bowel movement"""
         # Arrange
         mock_callback_query.data = BowelMovementCallbackKey.SKIP_NOTES.value
-        mock_fsm_context.get_data.return_value = {'bowel_movement_id': 1}
+        mock_fsm_context.get_data.return_value = {
+            'bowel_movement_id': 1,
+            'bowel_movement_msg_id': 123,
+            'chat_id': 456
+        }
 
         mock_bowel_movement = Mock(spec=BowelMovement)
         mock_bowel_movement.stool_consistency = 3
@@ -224,6 +240,11 @@ class TestBowelMovementHandlers:
     @pytest.mark.asyncio
     async def test_back_from_mucus_to_stool_consistency(self, mock_callback_query, mock_fsm_context):
         """Test navigating back from mucus state to stool consistency state"""
+        mock_fsm_context.get_data.return_value = {
+            'bowel_movement_id': 1,
+            'bowel_movement_msg_id': 123,
+            'chat_id': 456
+        }
         await back_from_mucus_to_stool_consistency(mock_callback_query, mock_fsm_context)
         mock_callback_query.message.edit_text.assert_called_once()
         mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.stool_consistency)

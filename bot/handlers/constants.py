@@ -9,6 +9,7 @@ class BowelMovementMessageCommand(StrEnum):
 class BowelMovementCallbackKey(StrEnum):
     """Callback keys for bowel movement handler"""
     SKIP = 'skip'
+    DELETE = 'delete_bowel_movement'
     SKIP_NOTES = 'skip_notes'
     STOOL_CONSISTENCY = 'stool_consistency'
     STOOL_BLOOD = 'stool_blood'

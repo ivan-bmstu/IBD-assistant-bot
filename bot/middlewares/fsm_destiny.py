@@ -29,21 +29,22 @@ class DestinyMiddleware(BaseMiddleware):
                             BowelMovementCallbackKey.STOOL_CONSISTENCY,
                             BowelMovementCallbackKey.STOOL_BLOOD,
                             BowelMovementCallbackKey.STOOL_MUCUS,
+                            BowelMovementCallbackKey.DELETE,
                     )
             ):
                 destiny = BOWEL_MOVEMENT
             elif callback_query.data in (
-                    BowelMovementCallbackKey.SKIP_NOTES.value,
-                    BowelMovementCallbackKey.BACK_FROM_NOTES.value,
-                    BowelMovementCallbackKey.BACK_FROM_MUCUS.value,
-                    BowelMovementCallbackKey.BACK_FROM_BLOOD.value,
+                    BowelMovementCallbackKey.SKIP_NOTES,
+                    BowelMovementCallbackKey.BACK_FROM_NOTES,
+                    BowelMovementCallbackKey.BACK_FROM_MUCUS,
+                    BowelMovementCallbackKey.BACK_FROM_BLOOD,
             ):
                 destiny = BOWEL_MOVEMENT
             elif callback_query.data.startswith(MainCallbackKey.SET_HOUR_TIMEZONE):
                 destiny = TIMEZONE
             elif callback_query.data.startswith(MainCallbackKey.SET_MINUTE_TIMEZONE):
                 destiny = TIMEZONE
-            elif callback_query.data == MainCallbackKey.SETTINGS_TIMEZONE.value:
+            elif callback_query.data == MainCallbackKey.SETTINGS_TIMEZONE:
                 destiny = TIMEZONE
 
         if destiny is None and message:

@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import List, Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models.bowel_movement import BowelMovement
@@ -30,6 +30,7 @@ class BowelMovementRepository:
         result = await session.execute(query)
         return list(result.scalars().all())
 
+
     async def create_bowel_movement(
             self,
             session: AsyncSession,
@@ -52,6 +53,7 @@ class BowelMovementRepository:
         await session.commit()
         await session.refresh(bowel_movement)
         return bowel_movement
+
 
     async def update_bowel_movement(
             self,
@@ -82,6 +84,16 @@ class BowelMovementRepository:
         await session.commit()
         await session.refresh(bowel_movement)
         return bowel_movement
+
+
+    async def delete_bowel_movement(self, session: AsyncSession, bowel_movement_id: int) -> bool:
+        """Delete bowel movement by ID"""
+        result = await session.execute(
+            delete(BowelMovement).where(BowelMovement.id == bowel_movement_id)
+        )
+        await session.commit()
+        return result.rowcount == 1
+
 
     async def get_bowel_movement_by_id(
             self,

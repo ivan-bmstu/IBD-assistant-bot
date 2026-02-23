@@ -59,11 +59,11 @@ class StoolBlood(IntEnum):
     @property
     def label(self) -> str:
         return {
-            StoolBlood.NOT_PRESENT:     "Отсутствует",
-            StoolBlood.TRACE:           "Следы 🩸",
-            StoolBlood.MILD:            "Умеренно 🩸🩸",
-            StoolBlood.MODERATE:        "Выражено 🩸🩸🩸",
-            StoolBlood.SEVERE:          "Резко выражено 🩸🩸🩸🩸",
+            StoolBlood.NOT_PRESENT:     "❎ Отсутствует",
+            StoolBlood.TRACE:           "🩸 Следы",
+            StoolBlood.MILD:            "🩸🩸 Умеренно",
+            StoolBlood.MODERATE:        "🩸🩸🩸 Выражено",
+            StoolBlood.SEVERE:          "🩸🩸🩸🩸 Резко выражено",
         }[self]
 
 
@@ -74,7 +74,7 @@ class Mucus(IntEnum):
     @property
     def label(self) -> str:
         return {
-            Mucus.NOT_PRESENT:  "Отсутствует",
-            Mucus.PRESENT:      "Присутствует 🟢",
+            Mucus.NOT_PRESENT:  "❎ Отсутствует",
+            Mucus.PRESENT:      "🟢 Присутствует",
         }[self]
 

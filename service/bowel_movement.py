@@ -12,6 +12,7 @@ class BowelMovementService:
     def __init__(self, bowel_movement_repository: BowelMovementRepository):
         self.bowel_movement_repository = bowel_movement_repository
 
+
     async def create_bowel_movement(
             self,
             session: AsyncSession,
@@ -31,6 +32,7 @@ class BowelMovementService:
             stool_consistency=stool_consistency
         )
 
+
     async def update_bowel_movement(
             self,
             session: AsyncSession,
@@ -49,6 +51,7 @@ class BowelMovementService:
             mucus=mucus,
         )
 
+
     async def get_bowel_movement_by_id(
             self,
             session: AsyncSession,
@@ -59,7 +62,14 @@ class BowelMovementService:
             id=bowel_movement_id,
         )
 
+
+    async def delete_bowel_movement(self, session: AsyncSession, bowel_movement_id: int) -> bool:
+        return await self.bowel_movement_repository.delete_bowel_movement(session, bowel_movement_id)
+
     @staticmethod
     def parse_optional_int(callback_data: str) -> int | None:
-        val = callback_data.split(":", 1)[1]
-        return None if val == BowelMovementCallbackKey.SKIP else int(val)
+        try:
+            val = callback_data.split(":", 1)[1]
+            return None if val == BowelMovementCallbackKey.SKIP else int(val)
+        except (ValueError, IndexError):
+            return None
