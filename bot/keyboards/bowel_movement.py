@@ -7,12 +7,16 @@ from database.models import BowelMovement
 from database.models.bowel_movement import StoolConsistency, StoolBlood, Mucus
 
 SKIP_BTN_TEXT = "➡️ Пропустить"
-BACK_BTN_TEXT = "⬅️ Вернуться назад"
-DELETE_BTN_TEXT = "❌🗑 Удалить запись"
+BACK_BTN_TEXT = "⬅️ Назад"
+DELETE_BTN_TEXT = "❌ Удалить запись"
 
 
 def get_bowel_movement_init_text() -> str:
-    return "📝 <b>Запись начата</b>\nУкажите, ложный ли позыв"
+    return (
+        "📝 <b>Запись начата</b>\n"
+        "Это займет меньше 10 секунд.\n"
+        "Если позыв ложный, можно завершить запись сразу."
+    )
 
 
 def get_bowel_movement_init_keyboard(bowel_movement_id: int) -> InlineKeyboardMarkup:
@@ -20,13 +24,13 @@ def get_bowel_movement_init_keyboard(bowel_movement_id: int) -> InlineKeyboardMa
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="🚫 Ложный позыв",
+                    text="🚫 Ложный позыв (завершить)",
                     callback_data=BowelMovementCallbackKey.FALSE_URGE,
                 ),
             ],
             [
                 InlineKeyboardButton(
-                    text="➡️ Продолжить",
+                    text="➡️ Записать стул",
                     callback_data=f"{BowelMovementCallbackKey.GO_TO_STOOL_CONSISTENCY}"
                 )
             ],
@@ -41,7 +45,7 @@ def get_bowel_movement_init_keyboard(bowel_movement_id: int) -> InlineKeyboardMa
 
 
 def get_stool_consistency_msg_text() -> str:
-    return "Укажите состояние стула:"
+    return "Консистенция стула:"
 
 
 def get_stool_consistency_msg_keyboard() -> InlineKeyboardMarkup:
@@ -91,7 +95,7 @@ def get_stool_consistency_msg_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_msg_confirm_delete_record_text() -> str:
-    return "Вы уверены, что хотите удалить запись?"
+    return "Удалить эту запись?"
 
 
 def get_msg_confirm_delete_record_keyboard(
@@ -102,13 +106,13 @@ def get_msg_confirm_delete_record_keyboard(
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="❎ Нет",
+                    text="Отмена",
                     callback_data=(
                         f'{BowelMovementCallbackKey.BACK_FROM_DELETE_CONFIRMATION}:{back_to}'
                         '|bowel_movement_id:{bowel_movement_id}'),
                 ),
                 InlineKeyboardButton(
-                    text="❌🗑 Да",
+                    text="❌ Удалить",
                     callback_data=f'{BowelMovementCallbackKey.DELETE_RECORD}:{bowel_movement_id}',
                 ),
             ]
@@ -117,11 +121,11 @@ def get_msg_confirm_delete_record_keyboard(
 
 
 def get_msg_text_delete_record() -> str:
-    return "✅ Запись успешно удалена!"
+    return "✅ Запись удалена"
 
 
 def get_mucus_msg_text() -> str:
-    return "Укажите, присутствует ли слизь в стуле"
+    return "Слизь в стуле?"
 
 
 def get_mucus_msg_keyboard() -> InlineKeyboardMarkup:
@@ -156,7 +160,7 @@ def get_mucus_msg_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_blood_msg_text() -> str:
-    return "Укажите количество крови в стуле"
+    return "Кровь в стуле?"
 
 
 def get_blood_msg_keyboard() -> InlineKeyboardMarkup:
