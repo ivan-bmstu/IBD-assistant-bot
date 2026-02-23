@@ -31,7 +31,7 @@ def get_timezone_hour_keyboard() -> InlineKeyboardMarkup:
         builder.add(InlineKeyboardButton(text=label, callback_data=f"{MainCallbackKey.SET_HOUR_TIMEZONE}:{offset}"))
 
     builder.add(InlineKeyboardButton(
-        text="Пропустить",
+        text="Пропустить (оставить текущую)",
         callback_data=f"{MainCallbackKey.SET_HOUR_TIMEZONE}:{MainCallbackKey.SKIP}"
     ))
     builder.adjust(3, 3, 3, 3, 3, 3, 3, 1)
@@ -47,7 +47,7 @@ def get_timezone_minutes_keyboard() -> InlineKeyboardMarkup:
     builder.add(InlineKeyboardButton(text=":30", callback_data=f"{MainCallbackKey.SET_MINUTE_TIMEZONE}:30"))
     builder.add(InlineKeyboardButton(text=":45", callback_data=f"{MainCallbackKey.SET_MINUTE_TIMEZONE}:45"))
     builder.add(InlineKeyboardButton(
-        text="Пропустить",
+        text="Пропустить (оставить текущую)",
         callback_data=f"{MainCallbackKey.SET_MINUTE_TIMEZONE}:{MainCallbackKey.SKIP}")
     )
 
@@ -57,6 +57,6 @@ def get_timezone_minutes_keyboard() -> InlineKeyboardMarkup:
 def get_settings_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="Настройки таймзоны", callback_data=MainCallbackKey.SETTINGS_TIMEZONE.value)]
+            [InlineKeyboardButton(text="🕒 Часовой пояс", callback_data=MainCallbackKey.SETTINGS_TIMEZONE)]
         ]
     )

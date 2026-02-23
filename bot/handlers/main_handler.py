@@ -119,7 +119,10 @@ async def cmd_help(message: Message):
         f"• {BowelMovementMessageCommand.START_BOWEL_MOVEMENT.value} - для записи факта похода в туалет и заметок\n\n"
         "Все данные хранятся анонимно и используются только для вашего анализа."
     )
-    await message.answer(help_text)
+    await message.answer(
+        text=help_text,
+        reply_markup=get_main_keyboard(),
+    )
 
 
 @router.message(F.text == MainMessageCommand.HELP.value)
@@ -142,7 +145,10 @@ async def cmd_about(message: Message):
         "под наблюдением специалиста.\n\n"
         "Для связи с разработчиком: laefree@yandex.ru"
     )
-    await message.answer(about_text)
+    await message.answer(
+        text=about_text,
+        reply_markup=get_main_keyboard(),
+    )
 
 
 @router.message(F.text == MainMessageCommand.ABOUT)

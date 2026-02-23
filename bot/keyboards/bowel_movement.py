@@ -30,7 +30,7 @@ def get_bowel_movement_init_keyboard(bowel_movement_id: int) -> InlineKeyboardMa
             ],
             [
                 InlineKeyboardButton(
-                    text="➡️ Записать стул",
+                    text="➡️ Начать запись",
                     callback_data=f"{BowelMovementCallbackKey.GO_TO_STOOL_CONSISTENCY}"
                 )
             ],
@@ -109,7 +109,7 @@ def get_msg_confirm_delete_record_keyboard(
                     text="Отмена",
                     callback_data=(
                         f'{BowelMovementCallbackKey.BACK_FROM_DELETE_CONFIRMATION}:{back_to}'
-                        '|bowel_movement_id:{bowel_movement_id}'),
+                        f'|id:{bowel_movement_id}'),
                 ),
                 InlineKeyboardButton(
                     text="❌ Удалить",

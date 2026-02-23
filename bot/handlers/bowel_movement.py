@@ -1,5 +1,3 @@
-from typing import Optional
-
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -133,6 +131,7 @@ async def delete_bowel_movement(
         reply_markup=None,
     )
     await state.clear()
+
 
 @router.callback_query(F.data == BowelMovementCallbackKey.FALSE_URGE)
 async def set_false_urge_to_bowel_movement(

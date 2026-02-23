@@ -3,7 +3,7 @@ from enum import StrEnum
 
 class BowelMovementMessageCommand(StrEnum):
     """Message commands for bowel movement handler"""
-    START_BOWEL_MOVEMENT = '📝 Сделать запись'
+    START_BOWEL_MOVEMENT = '📝 Начать запись'
 
 
 class BowelMovementCallbackKey(StrEnum):
@@ -21,7 +21,7 @@ class BowelMovementCallbackKey(StrEnum):
     BACK_FROM_NOTES = 'back_from_notes'
     BACK_FROM_MUCUS = 'back_from_mucus'
     BACK_FROM_BLOOD = 'back_from_blood'
-    BACK_FROM_DELETE_CONFIRMATION = 'back_from_delete_confirmation'
+    BACK_FROM_DELETE_CONFIRMATION = 'back_from_delete'
 
 
 class BackFromDeleteBowelMovementToPosition(StrEnum):
