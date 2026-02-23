@@ -74,6 +74,13 @@ async def delete_bowel_movement_confirmation(
         bowel_movement_id: int = state_data.bowel_movement_id
     except ValidationError:
         bowel_movement_id = BowelMovementService.parse_optional_int(callback.data)
+    if bowel_movement_id is None:
+        await callback.message.edit_text(
+            text="Запись не найдена. Начните новую запись.",
+            reply_markup=None,
+        )
+        await state.clear()
+        return
     current_state = await state.get_state()
     if current_state is None:
         back_to: BackFromDeleteBowelMovementToPosition = BackFromDeleteBowelMovementToPosition.FINAL_STEP
@@ -96,9 +103,17 @@ async def back_from_delete_confirmation(
         state: FSMContext,
         bowel_movement_service: BowelMovementService,
 ):
-    data_from_callback: list[str] = callback.data.split('|')
-    back_to: str = data_from_callback[0].split(':')[1]
-    bowel_movement_id: int = int(data_from_callback[1].split(':')[1])
+    try:
+        data_from_callback: list[str] = callback.data.split('|')
+        back_to: str = data_from_callback[0].split(':')[1]
+        bowel_movement_id: int = int(data_from_callback[1].split(':')[1])
+    except (IndexError, ValueError):
+        await callback.message.edit_text(
+            text="Запись не найдена. Начните новую запись.",
+            reply_markup=None,
+        )
+        await state.clear()
+        return
     if back_to == BackFromDeleteBowelMovementToPosition.INIT_STEP:
         await callback.message.edit_text(
             text=get_bowel_movement_init_text(),
@@ -110,6 +125,13 @@ async def back_from_delete_confirmation(
             bowel_movement_id=bowel_movement_id,
             session=session
         )
+        if bowel_movement is None:
+            await callback.message.edit_text(
+                text="Запись не найдена. Начните новую запись.",
+                reply_markup=None,
+            )
+            await state.clear()
+            return
         await callback.message.edit_text(
             text=get_result_msg_text(bowel_movement=bowel_movement),
             reply_markup=get_result_msg_inline_keyboard(bowel_movement_id=bowel_movement.id)
@@ -125,6 +147,13 @@ async def delete_bowel_movement(
         bowel_movement_service: BowelMovementService
 ):
     bowel_movement_id = BowelMovementService.parse_optional_int(callback.data)
+    if bowel_movement_id is None:
+        await callback.message.edit_text(
+            text="Запись не найдена. Начните новую запись.",
+            reply_markup=None,
+        )
+        await state.clear()
+        return
     await bowel_movement_service.delete_bowel_movement(session=session, bowel_movement_id=bowel_movement_id)
     await callback.message.edit_text(
         text=get_msg_text_delete_record(),
@@ -146,6 +175,13 @@ async def set_false_urge_to_bowel_movement(
         bowel_movement_id=state_data.bowel_movement_id,
         is_false_urge=True,
     )
+    if bowel_movement is None:
+        await callback.message.edit_text(
+            text="Запись не найдена. Начните новую запись.",
+            reply_markup=None,
+        )
+        await state.clear()
+        return
     await callback.message.edit_text(
         text=get_result_msg_text(bowel_movement),
         reply_markup=get_result_msg_inline_keyboard(bowel_movement.id)
@@ -184,11 +220,18 @@ async def add_stool_consistency(callback: CallbackQuery, state: FSMContext, sess
 
 @router.callback_query(F.data == BowelMovementCallbackKey.BACK_FROM_STOOL_CONSISTENCY)
 async def back_from_stool_consistency_to_init_conditional(callback: CallbackQuery, state: FSMContext):
+    try:
+        bowel_movement_id = BowelMovementStateData.model_validate(await state.get_data()).bowel_movement_id
+    except ValidationError:
+        await callback.message.edit_text(
+            text="Запись не найдена. Начните новую запись.",
+            reply_markup=None,
+        )
+        await state.clear()
+        return
     await callback.message.edit_text(
         text=get_bowel_movement_init_text(),
-        reply_markup=get_bowel_movement_init_keyboard(
-            BowelMovementStateData.model_validate(await state.get_data()).bowel_movement_id
-        )
+        reply_markup=get_bowel_movement_init_keyboard(bowel_movement_id)
     )
     await state.set_state(BowelMovementStates.init_conditional)
 
@@ -256,7 +299,12 @@ async def back_from_blood_to_mucus_state(callback: CallbackQuery, state: FSMCont
 async def save_notes(message: Message, state: FSMContext, session: AsyncSession,
                      bowel_movement_service: BowelMovementService, user_service: UserService):
     """Save notes"""
-    data: BowelMovementStateData = BowelMovementStateData.model_validate(await state.get_data())
+    try:
+        data: BowelMovementStateData = BowelMovementStateData.model_validate(await state.get_data())
+    except ValidationError:
+        await message.answer(text="Запись не найдена. Начните новую запись.")
+        await state.clear()
+        return
     bowel_movement_id = data.bowel_movement_id
     bot_msg_id = data.bowel_movement_msg_id
     chat_id = data.chat_id
@@ -265,6 +313,10 @@ async def save_notes(message: Message, state: FSMContext, session: AsyncSession,
         bowel_movement_id=bowel_movement_id,
         notes=message.text
     )
+    if bowel_movement is None:
+        await message.answer(text="Запись не найдена. Начните новую запись.")
+        await state.clear()
+        return
     user: User = await user_service.get_or_create_user(session, message.from_user.id)
     await state.clear()
     await message.bot.edit_message_text(
@@ -280,12 +332,27 @@ async def save_notes(message: Message, state: FSMContext, session: AsyncSession,
 async def skip_notes(callback: CallbackQuery, state: FSMContext, session: AsyncSession,
                      bowel_movement_service: BowelMovementService, user_service: UserService):
     """User skipped notes"""
-    data = BowelMovementStateData.model_validate(await state.get_data())
+    try:
+        data = BowelMovementStateData.model_validate(await state.get_data())
+    except ValidationError:
+        await callback.message.edit_text(
+            text="Запись не найдена. Начните новую запись.",
+            reply_markup=None,
+        )
+        await state.clear()
+        return
     bowel_movement_id: int = data.bowel_movement_id
     bowel_movement: BowelMovement = await bowel_movement_service.get_bowel_movement_by_id(
         bowel_movement_id=bowel_movement_id,
         session=session,
     )
+    if bowel_movement is None:
+        await callback.message.edit_text(
+            text="Запись не найдена. Начните новую запись.",
+            reply_markup=None,
+        )
+        await state.clear()
+        return
     user: User = await user_service.get_or_create_user(session, callback.from_user.id)
     await callback.message.edit_text(
         text=get_result_msg_text(bowel_movement, user.timezone_offset),
