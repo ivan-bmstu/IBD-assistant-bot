@@ -65,7 +65,7 @@ class TestBowelMovementHandlers:
         mock_fsm_context.get_state.assert_called_once()
         mock_bowel_movement_service.create_bowel_movement.assert_called_once_with(mock_async_session, 123)
         mock_fsm_context.update_data.assert_called_once()
-        mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.stool_consistency)
+        mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.init_conditional)
 
     @pytest.mark.asyncio
     async def test_start_bowel_movement_recording_already_in_progress(self, mock_message, mock_fsm_context,

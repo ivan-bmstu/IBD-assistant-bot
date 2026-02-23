@@ -112,7 +112,8 @@ class TestBowelMovementService:
             notes="Some notes",
             stool_consistency=2,
             blood_lvl=1,
-            mucus=0
+            mucus=0,
+            is_false_urge=False
         )
 
         # Assert
@@ -122,7 +123,8 @@ class TestBowelMovementService:
             notes="Some notes",
             stool_consistency=2,
             blood_lvl=1,
-            mucus=0
+            mucus=0,
+            is_false_urge=False
         )
         assert result == mock_bowel_movement
 
