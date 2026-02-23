@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import List, Optional
 
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.models.bowel_movement import BowelMovement
@@ -58,6 +58,7 @@ class BowelMovementRepository:
 
     async def update_bowel_movement(
             self,
+            user_id: int,
             session: AsyncSession,
             movement_id: int,
             notes: Optional[str] = None,
@@ -68,7 +69,9 @@ class BowelMovementRepository:
     ) -> Optional[BowelMovement]:
         """Update bowel movement fields if provided."""
         result = await session.execute(
-            select(BowelMovement).where(BowelMovement.id == movement_id)
+            select(BowelMovement).where(
+                and_(BowelMovement.id == movement_id, BowelMovement.user_id == user_id)
+            )
         )
         bowel_movement = result.scalar_one_or_none()
         if bowel_movement is None:
@@ -90,10 +93,17 @@ class BowelMovementRepository:
         return bowel_movement
 
 
-    async def delete_bowel_movement(self, session: AsyncSession, bowel_movement_id: int) -> bool:
+    async def delete_bowel_movement(
+            self,
+            session: AsyncSession,
+            bowel_movement_id: int,
+            user_id: int,
+    ) -> bool:
         """Delete bowel movement by ID"""
         result = await session.execute(
-            delete(BowelMovement).where(BowelMovement.id == bowel_movement_id)
+            delete(BowelMovement).where(
+                and_(BowelMovement.id == bowel_movement_id, BowelMovement.user_id == user_id)
+            )
         )
         await session.commit()
         return result.rowcount == 1
@@ -102,10 +112,13 @@ class BowelMovementRepository:
     async def get_bowel_movement_by_id(
             self,
             session: AsyncSession,
-            id: int,
-    ) -> BowelMovement:
+            bowel_movement_id: int,
+            user_id: int,
+    ) -> Optional[BowelMovement]:
         """Get bowel movement by ID"""
-        query = select(BowelMovement).where(BowelMovement.id == id)
+        query = select(BowelMovement).where(
+            and_(BowelMovement.id == bowel_movement_id, BowelMovement.user_id == user_id)
+        )
 
         result: BowelMovement = await session.scalar(query)
         return result

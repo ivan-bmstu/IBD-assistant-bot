@@ -123,7 +123,8 @@ async def back_from_delete_confirmation(
     else:
         bowel_movement: BowelMovement = await bowel_movement_service.get_bowel_movement_by_id(
             bowel_movement_id=bowel_movement_id,
-            session=session
+            session=session,
+            user_id=callback.from_user.id,
         )
         if bowel_movement is None:
             await callback.message.edit_text(
@@ -154,7 +155,11 @@ async def delete_bowel_movement(
         )
         await state.clear()
         return
-    await bowel_movement_service.delete_bowel_movement(session=session, bowel_movement_id=bowel_movement_id)
+    await bowel_movement_service.delete_bowel_movement(
+        session=session,
+        bowel_movement_id=bowel_movement_id,
+        user_id=callback.from_user.id,
+    )
     await callback.message.edit_text(
         text=get_msg_text_delete_record(),
         reply_markup=None,
@@ -174,6 +179,7 @@ async def set_false_urge_to_bowel_movement(
         session=session,
         bowel_movement_id=state_data.bowel_movement_id,
         is_false_urge=True,
+        user_id=callback.from_user.id,
     )
     if bowel_movement is None:
         await callback.message.edit_text(
@@ -210,6 +216,7 @@ async def add_stool_consistency(callback: CallbackQuery, state: FSMContext, sess
             session=session,
             bowel_movement_id=bowel_movement_id,
             stool_consistency=stool_consistency_val,
+            user_id=callback.from_user.id,
         )
     await callback.message.edit_text(
         text=get_mucus_msg_text(),
@@ -247,6 +254,7 @@ async def add_stool_mucus(callback: CallbackQuery, state: FSMContext, session: A
             session=session,
             bowel_movement_id=bowel_movement_id,
             mucus=mucus,
+            user_id=callback.from_user.id,
         )
     await callback.message.edit_text(
         text=get_blood_msg_text(),
@@ -277,6 +285,7 @@ async def add_stool_blood(callback: CallbackQuery, state: FSMContext, session: A
             session=session,
             bowel_movement_id=bowel_movement_id,
             blood_lvl=blood_lvl,
+            user_id=callback.from_user.id,
         )
     await callback.message.edit_text(
         text="Если хотите оставить заметку, пришлите ее в сообщении\nИли пропустите этот шаг",
@@ -311,7 +320,8 @@ async def save_notes(message: Message, state: FSMContext, session: AsyncSession,
     bowel_movement: BowelMovement = await bowel_movement_service.update_bowel_movement(
         session=session,
         bowel_movement_id=bowel_movement_id,
-        notes=message.text
+        notes=message.text,
+        user_id=message.from_user.id,
     )
     if bowel_movement is None:
         await message.answer(text="Запись не найдена. Начните новую запись.")
@@ -345,6 +355,7 @@ async def skip_notes(callback: CallbackQuery, state: FSMContext, session: AsyncS
     bowel_movement: BowelMovement = await bowel_movement_service.get_bowel_movement_by_id(
         bowel_movement_id=bowel_movement_id,
         session=session,
+        user_id=callback.from_user.id,
     )
     if bowel_movement is None:
         await callback.message.edit_text(

@@ -35,6 +35,7 @@ class BowelMovementService:
 
     async def update_bowel_movement(
             self,
+            user_id: int,
             session: AsyncSession,
             bowel_movement_id: int,
             notes: Optional[str] = None,
@@ -44,6 +45,7 @@ class BowelMovementService:
             is_false_urge: Optional[bool] = None,
     ) -> Optional[BowelMovement]:
         return await self.bowel_movement_repository.update_bowel_movement(
+            user_id=user_id,
             session=session,
             movement_id=bowel_movement_id,
             notes=notes,
@@ -57,16 +59,27 @@ class BowelMovementService:
     async def get_bowel_movement_by_id(
             self,
             session: AsyncSession,
-            bowel_movement_id: int
+            bowel_movement_id: int,
+            user_id: int,
     ) -> Optional[BowelMovement]:
         return await self.bowel_movement_repository.get_bowel_movement_by_id(
             session=session,
-            id=bowel_movement_id,
+            bowel_movement_id=bowel_movement_id,
+            user_id=user_id
         )
 
 
-    async def delete_bowel_movement(self, session: AsyncSession, bowel_movement_id: int) -> bool:
-        return await self.bowel_movement_repository.delete_bowel_movement(session, bowel_movement_id)
+    async def delete_bowel_movement(
+            self,
+            session: AsyncSession,
+            bowel_movement_id: int,
+            user_id: int,
+    ) -> bool:
+        return await self.bowel_movement_repository.delete_bowel_movement(
+            session=session,
+            bowel_movement_id=bowel_movement_id,
+            user_id=user_id
+        )
 
     @staticmethod
     def parse_optional_int(callback_data: str) -> int | None:

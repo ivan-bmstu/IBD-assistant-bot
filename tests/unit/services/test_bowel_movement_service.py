@@ -113,7 +113,8 @@ class TestBowelMovementService:
             stool_consistency=2,
             blood_lvl=1,
             mucus=0,
-            is_false_urge=False
+            is_false_urge=False,
+            user_id=1,
         )
 
         # Assert
@@ -124,7 +125,8 @@ class TestBowelMovementService:
             stool_consistency=2,
             blood_lvl=1,
             mucus=0,
-            is_false_urge=False
+            is_false_urge=False,
+            user_id=1
         )
         assert result == mock_bowel_movement
 
@@ -139,13 +141,15 @@ class TestBowelMovementService:
         # Act
         result = await service.get_bowel_movement_by_id(
             session=mock_async_session,
-            bowel_movement_id=1
+            bowel_movement_id=1,
+            user_id=1,
         )
 
         # Assert
         mock_bowel_movement_repo.get_bowel_movement_by_id.assert_called_once_with(
             session=mock_async_session,
-            id=1
+            bowel_movement_id=1,
+            user_id=1,
         )
         assert result == mock_bowel_movement
 

@@ -115,7 +115,8 @@ class TestBowelMovementHandlers:
         mock_bowel_movement_service.update_bowel_movement.assert_called_once_with(
             session=mock_async_session,
             bowel_movement_id=1,
-            stool_consistency=2
+            stool_consistency=2,
+            user_id=mock_callback_query.from_user.id
         )
         mock_callback_query.message.edit_text.assert_called_once()
         mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.mucus)
@@ -140,7 +141,8 @@ class TestBowelMovementHandlers:
         mock_bowel_movement_service.update_bowel_movement.assert_called_once_with(
             session=mock_async_session,
             bowel_movement_id=1,
-            mucus=1
+            mucus=1,
+            user_id=mock_callback_query.from_user.id,
         )
         mock_callback_query.message.edit_text.assert_called_once()
         mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.blood)
@@ -165,7 +167,8 @@ class TestBowelMovementHandlers:
         mock_bowel_movement_service.update_bowel_movement.assert_called_once_with(
             session=mock_async_session,
             bowel_movement_id=1,
-            blood_lvl=0
+            blood_lvl=0,
+            user_id=mock_callback_query.from_user.id,
         )
         mock_callback_query.message.edit_text.assert_called_once()
         mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.waiting_for_notes)
@@ -193,15 +196,21 @@ class TestBowelMovementHandlers:
         mock_user_service.get_or_create_user.return_value = mock_user
 
         # Act
-        await save_notes(mock_message, mock_fsm_context, mock_async_session, mock_bowel_movement_service,
-                         mock_user_service)
+        await save_notes(
+            mock_message,
+            mock_fsm_context,
+            mock_async_session,
+            mock_bowel_movement_service,
+            mock_user_service
+        )
 
         # Assert
         mock_fsm_context.get_data.assert_called_once()
         mock_bowel_movement_service.update_bowel_movement.assert_called_once_with(
             session=mock_async_session,
             bowel_movement_id=1,
-            notes="Some notes here"
+            notes="Some notes here",
+            user_id=mock_message.from_user.id,
         )
         mock_user_service.get_or_create_user.assert_called_once_with(mock_async_session, mock_message.from_user.id)
         mock_fsm_context.clear.assert_called_once()
@@ -238,7 +247,8 @@ class TestBowelMovementHandlers:
         mock_fsm_context.get_data.assert_called_once()
         mock_bowel_movement_service.get_bowel_movement_by_id.assert_called_once_with(
             bowel_movement_id=1,
-            session=mock_async_session
+            session=mock_async_session,
+            user_id=mock_callback_query.from_user.id,
         )
         mock_user_service.get_or_create_user.assert_called_once_with(mock_async_session,
                                                                       mock_callback_query.from_user.id)
@@ -342,7 +352,8 @@ class TestBowelMovementHandlers:
 
         mock_bowel_movement_service.get_bowel_movement_by_id.assert_called_once_with(
             bowel_movement_id=1,
-            session=mock_async_session
+            session=mock_async_session,
+            user_id=mock_callback_query.from_user.id,
         )
         mock_callback_query.message.edit_text.assert_called_once()
         mock_fsm_context.clear.assert_called_once()
@@ -372,6 +383,7 @@ class TestBowelMovementHandlers:
             session=mock_async_session,
             bowel_movement_id=1,
             is_false_urge=True,
+            user_id=mock_callback_query.from_user.id,
         )
         mock_callback_query.message.edit_text.assert_called_once()
         mock_fsm_context.clear.assert_called_once()
