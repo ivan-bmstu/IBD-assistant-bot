@@ -15,8 +15,16 @@ from bot.handlers.bowel_movement import (
     back_from_mucus_to_stool_consistency,
     back_from_blood_to_mucus_state,
     back_from_notes_to_blood_record,
+    delete_bowel_movement_confirmation,
+    back_from_delete_confirmation,
+    set_false_urge_to_bowel_movement,
+    stool_consistency_msg,
 )
-from bot.handlers.constants import BowelMovementMessageCommand, BowelMovementCallbackKey
+from bot.handlers.constants import (
+    BowelMovementMessageCommand,
+    BowelMovementCallbackKey,
+    BackFromDeleteBowelMovementToPosition,
+)
 from database.models import User
 from database.models.bowel_movement import BowelMovement
 from service.bowel_movement import BowelMovementService
@@ -262,6 +270,123 @@ class TestBowelMovementHandlers:
         await back_from_notes_to_blood_record(mock_callback_query, mock_fsm_context)
         mock_callback_query.message.edit_text.assert_called_once()
         mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.blood)
+
+    @pytest.mark.asyncio
+    async def test_delete_bowel_movement_confirmation_from_init(
+        self, mock_callback_query, mock_fsm_context
+    ):
+        """Test delete confirmation from init step with state data"""
+        mock_callback_query.data = f"{BowelMovementCallbackKey.DELETE_CONFIRMATION}:1"
+        mock_fsm_context.get_data.return_value = {
+            'bowel_movement_id': 1,
+            'bowel_movement_msg_id': 123,
+            'chat_id': 456
+        }
+
+        await delete_bowel_movement_confirmation(mock_callback_query, mock_fsm_context)
+
+        mock_callback_query.message.edit_text.assert_called_once()
+        mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.delete_confirmation)
+
+    @pytest.mark.asyncio
+    async def test_delete_bowel_movement_confirmation_without_state(
+        self, mock_callback_query, mock_fsm_context
+    ):
+        """Test delete confirmation when state data is missing"""
+        mock_callback_query.data = f"{BowelMovementCallbackKey.DELETE_CONFIRMATION}:1"
+        mock_fsm_context.get_data.return_value = {}
+
+        await delete_bowel_movement_confirmation(mock_callback_query, mock_fsm_context)
+
+        mock_callback_query.message.edit_text.assert_called_once()
+        mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.delete_confirmation)
+
+    @pytest.mark.asyncio
+    async def test_back_from_delete_confirmation_to_init(
+        self, mock_callback_query, mock_fsm_context, mock_async_session, mock_bowel_movement_service
+    ):
+        """Test back from delete confirmation to init step"""
+        mock_callback_query.data = (
+            f"{BowelMovementCallbackKey.BACK_FROM_DELETE_CONFIRMATION}:"
+            f"{BackFromDeleteBowelMovementToPosition.INIT_STEP}|bowel_movement_id:1"
+        )
+
+        await back_from_delete_confirmation(
+            mock_callback_query, mock_async_session, mock_fsm_context, mock_bowel_movement_service
+        )
+
+        mock_callback_query.message.edit_text.assert_called_once()
+        mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.init_conditional)
+
+    @pytest.mark.asyncio
+    async def test_back_from_delete_confirmation_to_final(
+        self, mock_callback_query, mock_fsm_context, mock_async_session, mock_bowel_movement_service
+    ):
+        """Test back from delete confirmation to final step"""
+        mock_callback_query.data = (
+            f"{BowelMovementCallbackKey.BACK_FROM_DELETE_CONFIRMATION}:"
+            f"{BackFromDeleteBowelMovementToPosition.FINAL_STEP}|bowel_movement_id:1"
+        )
+        mock_bowel_movement = Mock(spec=BowelMovement)
+        mock_bowel_movement.id = 1
+        mock_bowel_movement.stool_consistency = None
+        mock_bowel_movement.blood_lvl = None
+        mock_bowel_movement.mucus = None
+        mock_bowel_movement.created_at = datetime.now()
+        mock_bowel_movement.is_false_urge = False
+        mock_bowel_movement_service.get_bowel_movement_by_id.return_value = mock_bowel_movement
+
+        await back_from_delete_confirmation(
+            mock_callback_query, mock_async_session, mock_fsm_context, mock_bowel_movement_service
+        )
+
+        mock_bowel_movement_service.get_bowel_movement_by_id.assert_called_once_with(
+            bowel_movement_id=1,
+            session=mock_async_session
+        )
+        mock_callback_query.message.edit_text.assert_called_once()
+        mock_fsm_context.clear.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_false_urge_to_bowel_movement(
+        self, mock_callback_query, mock_fsm_context, mock_async_session, mock_bowel_movement_service
+    ):
+        """Test handling false urge callback"""
+        mock_callback_query.data = BowelMovementCallbackKey.FALSE_URGE
+        mock_fsm_context.get_data.return_value = {
+            'bowel_movement_id': 1,
+            'bowel_movement_msg_id': 123,
+            'chat_id': 456
+        }
+        mock_bowel_movement = Mock(spec=BowelMovement)
+        mock_bowel_movement.id = 1
+        mock_bowel_movement.created_at = datetime.now()
+        mock_bowel_movement.is_false_urge = True
+        mock_bowel_movement_service.update_bowel_movement.return_value = mock_bowel_movement
+
+        await set_false_urge_to_bowel_movement(
+            mock_callback_query, mock_fsm_context, mock_async_session, mock_bowel_movement_service
+        )
+
+        mock_bowel_movement_service.update_bowel_movement.assert_called_once_with(
+            session=mock_async_session,
+            bowel_movement_id=1,
+            is_false_urge=True,
+        )
+        mock_callback_query.message.edit_text.assert_called_once()
+        mock_fsm_context.clear.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_go_to_stool_consistency(
+        self, mock_callback_query, mock_fsm_context
+    ):
+        """Test navigating to stool consistency step"""
+        mock_callback_query.data = BowelMovementCallbackKey.GO_TO_STOOL_CONSISTENCY
+
+        await stool_consistency_msg(mock_callback_query, mock_fsm_context)
+
+        mock_callback_query.message.edit_text.assert_called_once()
+        mock_fsm_context.set_state.assert_called_once_with(BowelMovementStates.stool_consistency)
 
 
 if __name__ == "__main__":

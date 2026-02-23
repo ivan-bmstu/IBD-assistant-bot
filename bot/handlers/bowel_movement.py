@@ -135,7 +135,7 @@ async def delete_bowel_movement(
     await state.clear()
 
 @router.callback_query(F.data == BowelMovementCallbackKey.FALSE_URGE)
-async def false_urge_to_bowel_movement(
+async def set_false_urge_to_bowel_movement(
         callback: CallbackQuery,
         state: FSMContext,
         session: AsyncSession,
