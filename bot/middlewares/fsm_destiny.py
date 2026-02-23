@@ -23,22 +23,7 @@ class DestinyMiddleware(BaseMiddleware):
 
 
         elif callback_query and callback_query.data:
-            if any(
-                    callback_query.data.startswith(prefix)
-                    for prefix in (
-                            BowelMovementCallbackKey.STOOL_CONSISTENCY,
-                            BowelMovementCallbackKey.STOOL_BLOOD,
-                            BowelMovementCallbackKey.STOOL_MUCUS,
-                            BowelMovementCallbackKey.DELETE,
-                    )
-            ):
-                destiny = BOWEL_MOVEMENT
-            elif callback_query.data in (
-                    BowelMovementCallbackKey.SKIP_NOTES,
-                    BowelMovementCallbackKey.BACK_FROM_NOTES,
-                    BowelMovementCallbackKey.BACK_FROM_MUCUS,
-                    BowelMovementCallbackKey.BACK_FROM_BLOOD,
-            ):
+            if any(callback_query.data.startswith(k.value) for k in BowelMovementCallbackKey):
                 destiny = BOWEL_MOVEMENT
             elif callback_query.data.startswith(MainCallbackKey.SET_HOUR_TIMEZONE):
                 destiny = TIMEZONE

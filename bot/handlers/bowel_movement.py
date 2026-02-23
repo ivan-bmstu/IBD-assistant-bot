@@ -1,14 +1,20 @@
+from typing import Optional
+
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, CallbackQuery
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from bot.handlers.constants import BowelMovementMessageCommand, BowelMovementCallbackKey
-from bot.keyboards.bowel_movement import get_bowel_movement_keyboard, get_skip_notes_keyboard, get_result_msg_text, \
-    get_bowel_movement_text, get_blood_msg_text, get_blood_msg_keyboard, get_mucus_msg_text, get_mucus_msg_keyboard, \
-    get_msg_text_delete_record, get_result_msg_inline_keyboard
+from bot.handlers.constants import BowelMovementMessageCommand, BowelMovementCallbackKey, \
+    BackFromDeleteBowelMovementToPosition
+from bot.keyboards.bowel_movement import get_stool_consistency_msg_keyboard, get_skip_notes_keyboard, \
+    get_result_msg_text, \
+    get_bowel_movement_init_text, get_blood_msg_text, get_blood_msg_keyboard, get_mucus_msg_text, \
+    get_mucus_msg_keyboard, \
+    get_msg_text_delete_record, get_result_msg_inline_keyboard, get_bowel_movement_init_keyboard, \
+    get_stool_consistency_msg_text, get_msg_confirm_delete_record_text, get_msg_confirm_delete_record_keyboard
 from database.models import User
 from database.models.bowel_movement import BowelMovement
 from service.bowel_movement import BowelMovementService
@@ -19,10 +25,12 @@ router = Router()
 
 class BowelMovementStates(StatesGroup):
     """FSM states for bowel movement recording"""
+    init_conditional = State()
     stool_consistency = State()
     mucus = State()
     blood = State()
     waiting_for_notes = State()
+    delete_confirmation = State()
 
 
 class BowelMovementStateData(BaseModel):
@@ -47,30 +55,112 @@ async def start_bowel_movement_recording(
         return
     bowel_movement: BowelMovement = await bowel_movement_service.create_bowel_movement(session, message.from_user.id)
     sent_msg: Message = await message.answer(
-        text=get_bowel_movement_text(),
-        reply_markup=get_bowel_movement_keyboard(bowel_movement.id)
+        text=get_bowel_movement_init_text(),
+        reply_markup=get_bowel_movement_init_keyboard(bowel_movement.id)
     )
     await state.update_data(
         bowel_movement_id=bowel_movement.id,
         bowel_movement_msg_id=sent_msg.message_id,
         chat_id=sent_msg.chat.id
     )
-    await state.set_state(BowelMovementStates.stool_consistency)
+    await state.set_state(BowelMovementStates.init_conditional)
 
 
-@router.callback_query(F.data.startswith(BowelMovementCallbackKey.DELETE))
+@router.callback_query(F.data.startswith(BowelMovementCallbackKey.DELETE_CONFIRMATION))
+async def delete_bowel_movement_confirmation(
+        callback: CallbackQuery,
+        state: FSMContext,
+):
+    try:
+        state_data: BowelMovementStateData = BowelMovementStateData.model_validate(await state.get_data())
+        bowel_movement_id: int = state_data.bowel_movement_id
+    except ValidationError:
+        bowel_movement_id = BowelMovementService.parse_optional_int(callback.data)
+    current_state = await state.get_state()
+    if current_state is None:
+        back_to: BackFromDeleteBowelMovementToPosition = BackFromDeleteBowelMovementToPosition.FINAL_STEP
+    else:
+        back_to = BackFromDeleteBowelMovementToPosition.INIT_STEP
+    await callback.message.edit_text(
+        text=get_msg_confirm_delete_record_text(),
+        reply_markup=get_msg_confirm_delete_record_keyboard(
+            bowel_movement_id=bowel_movement_id,
+            back_to=back_to
+        )
+    )
+    await state.set_state(BowelMovementStates.delete_confirmation)
+
+
+@router.callback_query(F.data.startswith(BowelMovementCallbackKey.BACK_FROM_DELETE_CONFIRMATION))
+async def back_from_delete_confirmation(
+        callback: CallbackQuery,
+        session: AsyncSession,
+        state: FSMContext,
+        bowel_movement_service: BowelMovementService,
+):
+    data_from_callback: list[str] = callback.data.split('|')
+    back_to: str = data_from_callback[0].split(':')[1]
+    bowel_movement_id: int = int(data_from_callback[1].split(':')[1])
+    if back_to == BackFromDeleteBowelMovementToPosition.INIT_STEP:
+        await callback.message.edit_text(
+            text=get_bowel_movement_init_text(),
+            reply_markup=get_bowel_movement_init_keyboard(bowel_movement_id)
+        )
+        await state.set_state(BowelMovementStates.init_conditional)
+    else:
+        bowel_movement: BowelMovement = await bowel_movement_service.get_bowel_movement_by_id(
+            bowel_movement_id=bowel_movement_id,
+            session=session
+        )
+        await callback.message.edit_text(
+            text=get_result_msg_text(bowel_movement=bowel_movement),
+            reply_markup=get_result_msg_inline_keyboard(bowel_movement_id=bowel_movement.id)
+        )
+        await state.clear()
+
+
+@router.callback_query(F.data.startswith(BowelMovementCallbackKey.DELETE_RECORD))
 async def delete_bowel_movement(
         callback: CallbackQuery,
         state: FSMContext,
         session: AsyncSession,
         bowel_movement_service: BowelMovementService
 ):
-    bowel_movement_id: int = BowelMovementService.parse_optional_int(callback.data)
+    bowel_movement_id = BowelMovementService.parse_optional_int(callback.data)
     await bowel_movement_service.delete_bowel_movement(session=session, bowel_movement_id=bowel_movement_id)
     await callback.message.edit_text(
-        text=get_msg_text_delete_record()
+        text=get_msg_text_delete_record(),
+        reply_markup=None,
     )
     await state.clear()
+
+@router.callback_query(F.data == BowelMovementCallbackKey.FALSE_URGE)
+async def false_urge_to_bowel_movement(
+        callback: CallbackQuery,
+        state: FSMContext,
+        session: AsyncSession,
+        bowel_movement_service: BowelMovementService
+):
+    state_data: BowelMovementStateData = BowelMovementStateData.model_validate(await state.get_data())
+    bowel_movement: BowelMovement = await bowel_movement_service.update_bowel_movement(
+        session=session,
+        bowel_movement_id=state_data.bowel_movement_id,
+        is_false_urge=True,
+    )
+    await callback.message.edit_text(
+        text=get_result_msg_text(bowel_movement),
+        reply_markup=get_result_msg_inline_keyboard(bowel_movement.id)
+    )
+    await state.clear()
+
+
+@router.callback_query(F.data == BowelMovementCallbackKey.GO_TO_STOOL_CONSISTENCY)
+async def stool_consistency_msg(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        text=get_stool_consistency_msg_text(),
+        reply_markup=get_stool_consistency_msg_keyboard()
+    )
+    await state.set_state(BowelMovementStates.stool_consistency)
 
 
 @router.callback_query(F.data.startswith(BowelMovementCallbackKey.STOOL_CONSISTENCY))
@@ -91,6 +181,17 @@ async def add_stool_consistency(callback: CallbackQuery, state: FSMContext, sess
         reply_markup=get_mucus_msg_keyboard(),
     )
     await state.set_state(BowelMovementStates.mucus)
+
+
+@router.callback_query(F.data == BowelMovementCallbackKey.BACK_FROM_STOOL_CONSISTENCY)
+async def back_from_stool_consistency_to_init_conditional(callback: CallbackQuery, state: FSMContext):
+    await callback.message.edit_text(
+        text=get_bowel_movement_init_text(),
+        reply_markup=get_bowel_movement_init_keyboard(
+            BowelMovementStateData.model_validate(await state.get_data()).bowel_movement_id
+        )
+    )
+    await state.set_state(BowelMovementStates.init_conditional)
 
 
 @router.callback_query(F.data.startswith(BowelMovementCallbackKey.STOOL_MUCUS))
@@ -115,10 +216,9 @@ async def add_stool_mucus(callback: CallbackQuery, state: FSMContext, session: A
 @router.callback_query(F.data == BowelMovementCallbackKey.BACK_FROM_MUCUS)
 async def back_from_mucus_to_stool_consistency(callback: CallbackQuery, state: FSMContext):
     """Back to the stool consistency recording process"""
-    bowel_movement: BowelMovementStateData = BowelMovementStateData.model_validate(await state.get_data())
     await callback.message.edit_text(
-        text=get_bowel_movement_text(),
-        reply_markup=get_bowel_movement_keyboard(bowel_movement.bowel_movement_id),
+        text=get_stool_consistency_msg_text(),
+        reply_markup=get_stool_consistency_msg_keyboard(),
     )
     await state.set_state(BowelMovementStates.stool_consistency)
 

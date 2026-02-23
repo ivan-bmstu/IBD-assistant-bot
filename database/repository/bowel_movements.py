@@ -48,6 +48,7 @@ class BowelMovementRepository:
             time=movement_time,
             notes=notes,
             stool_consistency=stool_consistency,
+
         )
         session.add(bowel_movement)
         await session.commit()
@@ -63,6 +64,7 @@ class BowelMovementRepository:
             stool_consistency: Optional[int] = None,
             blood_lvl: Optional[int] = None,
             mucus: Optional[int] = None,
+            is_false_urge: Optional[bool] = None,
     ) -> Optional[BowelMovement]:
         """Update bowel movement fields if provided."""
         result = await session.execute(
@@ -80,6 +82,8 @@ class BowelMovementRepository:
             bowel_movement.blood_lvl = blood_lvl
         if mucus is not None:
             bowel_movement.mucus = mucus
+        if is_false_urge is not None:
+            bowel_movement.is_false_urge = is_false_urge
 
         await session.commit()
         await session.refresh(bowel_movement)

@@ -2,7 +2,7 @@ from datetime import date
 
 from sqlalchemy import (
     Column, Date, DateTime, ForeignKey,
-    Integer, Text
+    Integer, Text, Boolean, false
 )
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -24,6 +24,7 @@ class BowelMovement(Base):
     stool_consistency = Column(Integer, nullable=True)
     blood_lvl = Column(Integer, nullable=True)
     mucus = Column(Integer, nullable=True)
+    is_false_urge = Column(Boolean, nullable=False, server_default=false())
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     # Relationships
@@ -42,10 +43,10 @@ class StoolConsistency(IntEnum):
     @property
     def label(self) -> str:
         return {
-            StoolConsistency.LIQUID:    "Жидкий",
-            StoolConsistency.MUSHY:     "Кашицеобразный",
-            StoolConsistency.NORMAL:    "Нормальный",
-            StoolConsistency.HARD:      "Твёрдый",
+            StoolConsistency.LIQUID: "Жидкий",
+            StoolConsistency.MUSHY: "Кашицеобразный",
+            StoolConsistency.NORMAL: "Нормальный",
+            StoolConsistency.HARD: "Твёрдый",
         }[self]
 
 
@@ -59,11 +60,11 @@ class StoolBlood(IntEnum):
     @property
     def label(self) -> str:
         return {
-            StoolBlood.NOT_PRESENT:     "❎ Отсутствует",
-            StoolBlood.TRACE:           "🩸 Следы",
-            StoolBlood.MILD:            "🩸🩸 Умеренно",
-            StoolBlood.MODERATE:        "🩸🩸🩸 Выражено",
-            StoolBlood.SEVERE:          "🩸🩸🩸🩸 Резко выражено",
+            StoolBlood.NOT_PRESENT: "❎ Отсутствует",
+            StoolBlood.TRACE: "🩸 Следы",
+            StoolBlood.MILD: "🩸🩸 Умеренно",
+            StoolBlood.MODERATE: "🩸🩸🩸 Выражено",
+            StoolBlood.SEVERE: "🩸🩸🩸🩸 Резко выражено",
         }[self]
 
 
@@ -74,7 +75,6 @@ class Mucus(IntEnum):
     @property
     def label(self) -> str:
         return {
-            Mucus.NOT_PRESENT:  "❎ Отсутствует",
-            Mucus.PRESENT:      "🟢 Присутствует",
+            Mucus.NOT_PRESENT: "❎ Отсутствует",
+            Mucus.PRESENT: "🟢 Присутствует",
         }[self]
-

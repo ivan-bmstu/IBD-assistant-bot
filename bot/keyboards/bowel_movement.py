@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-from bot.handlers.constants import BowelMovementCallbackKey
+from bot.handlers.constants import BowelMovementCallbackKey, BackFromDeleteBowelMovementToPosition
 from database.models import BowelMovement
 from database.models.bowel_movement import StoolConsistency, StoolBlood, Mucus
 
@@ -11,11 +11,40 @@ BACK_BTN_TEXT = "⬅️ Вернуться назад"
 DELETE_BTN_TEXT = "❌🗑 Удалить запись"
 
 
-def get_bowel_movement_text() -> str:
-    return "📝 <b>Запись начата</b>\n\nУкажите состояние стула:"
+def get_bowel_movement_init_text() -> str:
+    return "📝 <b>Запись начата</b>\nУкажите, ложный ли позыв"
 
 
-def get_bowel_movement_keyboard(bowel_movement_id: int) -> InlineKeyboardMarkup:
+def get_bowel_movement_init_keyboard(bowel_movement_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="🚫 Ложный позыв",
+                    callback_data=BowelMovementCallbackKey.FALSE_URGE,
+                ),
+            ],
+            [
+                InlineKeyboardButton(
+                    text="➡️ Продолжить",
+                    callback_data=f"{BowelMovementCallbackKey.GO_TO_STOOL_CONSISTENCY}"
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text=DELETE_BTN_TEXT,
+                    callback_data=f'{BowelMovementCallbackKey.DELETE_CONFIRMATION}:{bowel_movement_id}'
+                )
+            ]
+        ]
+    )
+
+
+def get_stool_consistency_msg_text() -> str:
+    return "Укажите состояние стула:"
+
+
+def get_stool_consistency_msg_keyboard() -> InlineKeyboardMarkup:
     """Get keyboard for bowel movement input"""
     # Маппинг значений консистенции на текст кнопок
     consistency_options = [
@@ -39,22 +68,52 @@ def get_bowel_movement_keyboard(bowel_movement_id: int) -> InlineKeyboardMarkup:
             )
         inline_keyboard.append(row)
 
-    inline_keyboard.append([
-        InlineKeyboardButton(
-            text=DELETE_BTN_TEXT,
-            callback_data=f'{BowelMovementCallbackKey.DELETE}:{bowel_movement_id}'
-        )
-    ])
-
     # Кнопка "Пропустить" отдельной строкой
-    inline_keyboard.append([
-        InlineKeyboardButton(
-            text=SKIP_BTN_TEXT,
-            callback_data=f'{BowelMovementCallbackKey.STOOL_CONSISTENCY}:{BowelMovementCallbackKey.SKIP}'
-        ),
-    ])
+    inline_keyboard.append(
+        [
+            InlineKeyboardButton(
+                text=SKIP_BTN_TEXT,
+                callback_data=f'{BowelMovementCallbackKey.STOOL_CONSISTENCY}:{BowelMovementCallbackKey.SKIP}'
+            ),
+        ]
+    )
+
+    inline_keyboard.append(
+        [
+            InlineKeyboardButton(
+                text=BACK_BTN_TEXT,
+                callback_data=f'{BowelMovementCallbackKey.BACK_FROM_STOOL_CONSISTENCY}'
+            )
+        ]
+    )
 
     return InlineKeyboardMarkup(inline_keyboard=inline_keyboard)
+
+
+def get_msg_confirm_delete_record_text() -> str:
+    return "Вы уверены, что хотите удалить запись?"
+
+
+def get_msg_confirm_delete_record_keyboard(
+        bowel_movement_id: int,
+        back_to: BackFromDeleteBowelMovementToPosition,
+) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❎ Нет",
+                    callback_data=(
+                        f'{BowelMovementCallbackKey.BACK_FROM_DELETE_CONFIRMATION}:{back_to}'
+                        '|bowel_movement_id:{bowel_movement_id}'),
+                ),
+                InlineKeyboardButton(
+                    text="❌🗑 Да",
+                    callback_data=f'{BowelMovementCallbackKey.DELETE_RECORD}:{bowel_movement_id}',
+                ),
+            ]
+        ]
+    )
 
 
 def get_msg_text_delete_record() -> str:
@@ -159,6 +218,15 @@ def get_skip_notes_keyboard():
 
 
 def get_result_msg_text(bowel_movement: BowelMovement, timezone_offset: int | None = 0) -> str:
+    offset_minutes = timezone_offset or 0
+    local_dt = bowel_movement.created_at + timedelta(minutes=offset_minutes)
+    if bowel_movement.is_false_urge:
+        return (
+            "📝 <b>Запись произведена успешно</b>\n\n"
+            f"Дата: {local_dt.strftime('%d.%m.%Y')}\n"
+            f"Время: {local_dt.strftime('%H:%M')}\n"
+            "Ложный позыв"
+        )
     stool_consistency = (
         StoolConsistency(bowel_movement.stool_consistency)
         if bowel_movement.stool_consistency is not None
@@ -166,9 +234,6 @@ def get_result_msg_text(bowel_movement: BowelMovement, timezone_offset: int | No
     )
     blood_lvl = (StoolBlood(bowel_movement.blood_lvl) if bowel_movement.blood_lvl is not None else None)
     mucus_lvl = Mucus(bowel_movement.mucus) if bowel_movement.mucus is not None else None
-
-    offset_minutes = timezone_offset or 0
-    local_dt = bowel_movement.created_at + timedelta(minutes=offset_minutes)
 
     notes = f"Примечания: {bowel_movement.notes}" if bowel_movement.notes else ""
     consistency_text = stool_consistency.label if stool_consistency else "—"
@@ -192,7 +257,7 @@ def get_result_msg_inline_keyboard(bowel_movement_id: int) -> InlineKeyboardMark
             [
                 InlineKeyboardButton(
                     text=DELETE_BTN_TEXT,
-                    callback_data=f'{BowelMovementCallbackKey.DELETE}:{bowel_movement_id}'
+                    callback_data=f'{BowelMovementCallbackKey.DELETE_CONFIRMATION}:{bowel_movement_id}'
                 )
             ]
         ]

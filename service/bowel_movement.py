@@ -40,7 +40,8 @@ class BowelMovementService:
             notes: Optional[str] = None,
             stool_consistency: Optional[int] = None,
             blood_lvl: Optional[int] = None,
-            mucus: Optional[int] = None
+            mucus: Optional[int] = None,
+            is_false_urge: Optional[bool] = None,
     ) -> Optional[BowelMovement]:
         return await self.bowel_movement_repository.update_bowel_movement(
             session=session,
@@ -49,6 +50,7 @@ class BowelMovementService:
             stool_consistency=stool_consistency,
             blood_lvl=blood_lvl,
             mucus=mucus,
+            is_false_urge=is_false_urge
         )
 
 
